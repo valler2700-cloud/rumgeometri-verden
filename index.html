@@ -290,6 +290,9 @@
   .ansBtn{ background:#fff; color:var(--navy); }
   .ansBtn:active{ transform:scale(.97); }
   .ansBtn:disabled{ opacity:.45; cursor:default; }
+  .ansInput{ font-family:var(--font); font-weight:700; font-size:14px; border:2px solid var(--teal);
+    border-radius:11px; padding:9px 12px; width:130px; color:var(--navy); outline:none; }
+  .ansInput:disabled{ opacity:.55; }
   #mCheck{ background:var(--amber); color:#fff; }
   #mFb{ margin-top:9px; font-size:13px; font-weight:500; line-height:1.45; }
   #mFb.ok{ color:#b9f0cf; }
@@ -1287,7 +1290,13 @@
     pyth1:['Pythagoras: a² + b² = c² (c er hypotenusen).','3² + 4² = 9 + 16.','Tag kvadratroden af resultatet.'],
     pyth2:['Pythagoras: a² + b² = c².','6² + 8² = 36 + 64.','Tag kvadratroden af resultatet.'],
     vinkel1:['Vinkelsummen i en trekant er 180°.','Træk de to kendte fra: 180 − 90 − 35.','Hvad bliver det?'],
-    vinkel2:['En firkant kan deles i to trekanter med en diagonal.','Hver trekant har vinkelsum 180°.','To trekanter giver tilsammen …?']
+    vinkel2:['En firkant kan deles i to trekanter med en diagonal.','Hver trekant har vinkelsum 180°.','To trekanter giver tilsammen …?'],
+    ligRekt:['Kald bredden b. Så er længden b + 4.','Omkreds = 2·(længde + bredde) = 2·((b+4) + b).','Sæt det lig 40: 2·(2b + 4) = 40, altså 4b + 8 = 40.','Træk 8 fra på begge sider og divider med 4: b = ?'],
+    ligKasseH:['Rumfang = grundflade · højde.','Indsæt tallene i ligningen: 200 · h = 1 000.','Divider begge sider med 200 for at isolere h.'],
+    ligTern:['Terningens rumfang er V = s³ (s·s·s).','Opstil ligningen: s³ = 27.','Hvilket tal ganget tre gange giver 27? Tag kubikroden ∛.'],
+    ligVinkel:['Vinkelsummen i en trekant er altid 180°.','Læg de tre vinkler sammen: x + 2x + 3x.','Sæt summen lig 180: 6x = 180, og divider med 6.'],
+    ligCyl:['Rumfang = grundflade · højde.','Indsæt: 50 · h = 250.','Divider begge sider med 50 for at finde h.'],
+    ligKasse3b:['Kald bredden b. Længden er så 3·b.','Omkreds af rektangel = 2·(længde + bredde) = 2·(3b + b).','Det giver 8b. Sæt 8b = 64 og divider med 8.']
   };
   function helpStep(){
     if (!activeTask) return;
@@ -1715,6 +1724,31 @@
     { id:'vinkel2', tag:'Bonus 📐', type:'think', needs:[],
       prompt:'Bonus (2D): Hvad er vinkelsummen i en firkant?',
       opts:['180°','360°','540°'], answer:1, reward:'En firkant kan deles i to trekanter: 2 · 180° = 360°.' },
+
+    // ===== ✏️ Ligningsopgaver: opstil en ligning og løs den =====
+    { id:'ligRekt', tag:'✏️ Ligning', type:'input', needs:[], solution:8, placeholder:'b i cm',
+      prompt:'Et rektangel har omkreds 40 cm. Længden er 4 cm længere end bredden. Kald bredden b, opstil en ligning og find bredden.',
+      reward:'Længde = b + 4. Omkreds: 2·(b + (b+4)) = 40 ⇒ 4b + 8 = 40 ⇒ 4b = 32 ⇒ b = 8 cm.' },
+
+    { id:'ligKasseH', tag:'✏️ Ligning', type:'input', needs:[], solution:5, placeholder:'h i cm',
+      prompt:'En kasse har grundflade 200 cm² og rumfang 1 000 cm³. Kald højden h, opstil ligningen og find højden.',
+      reward:'V = grundflade · h  ⇒  200·h = 1 000  ⇒  h = 1 000 ÷ 200 = 5 cm.' },
+
+    { id:'ligTern', tag:'✏️ Ligning', type:'input', needs:[], solution:3, placeholder:'s i cm',
+      prompt:'En terning har rumfang 27 cm³. Kald sidelængden s, opstil ligningen og find s.',
+      reward:'V = s³  ⇒  s³ = 27  ⇒  s = ∛27 = 3 cm.' },
+
+    { id:'ligVinkel', tag:'✏️ Ligning', type:'input', needs:[], solution:30, placeholder:'x i grader',
+      prompt:'De tre vinkler i en trekant er x, 2x og 3x. Opstil en ligning ud fra vinkelsummen og find x.',
+      reward:'x + 2x + 3x = 180  ⇒  6x = 180  ⇒  x = 30°. Vinklerne er 30°, 60° og 90°.' },
+
+    { id:'ligCyl', tag:'✏️ Ligning', type:'input', needs:[], solution:5, placeholder:'h i cm',
+      prompt:'En cylinder har grundflade (π·r²) på 50 cm² og rumfang 250 cm³. Kald højden h, opstil ligningen og find h.',
+      reward:'V = grundflade · h  ⇒  50·h = 250  ⇒  h = 250 ÷ 50 = 5 cm.' },
+
+    { id:'ligKasse3b', tag:'✏️ Ligning', type:'input', needs:[], solution:8, placeholder:'b i cm',
+      prompt:'Bunden af en kasse er et rektangel, hvor længden er 3 gange bredden. Rektanglets omkreds er 64 cm. Kald bredden b, opstil en ligning og find bredden.',
+      reward:'Længde = 3b. Omkreds: 2·(3b + b) = 64  ⇒  8b = 64  ⇒  b = 8 cm. Længden = 3·8 = 24 cm.' },
   ];
 
   function solvedCount(){ var n=0; for (var k in solved) if (solved[k]) n++; return n; }
@@ -1783,7 +1817,9 @@
     $('mPrompt').textContent = t.prompt;
     $('mUse').innerHTML = (t.type === 'build')
       ? 'Byg/justér i 🔨 Byg-menuen — opgaven tjekkes automatisk'
-      : 'Tænk – vælg det rigtige svar';
+      : (t.type === 'input')
+        ? 'Opstil ligningen på papir, regn svaret ud, og skriv det her'
+        : 'Tænk – vælg det rigtige svar';
     var fb = $('mFb'); fb.textContent = ''; fb.className = '';
     var ans = $('mAns'); ans.innerHTML = '';
     if (t.type === 'think'){
@@ -1792,6 +1828,14 @@
         b.onclick = function(){ answerThink(t, i); };
         ans.appendChild(b);
       });
+    } else if (t.type === 'input'){
+      var inp = document.createElement('input'); inp.id = 'mInput'; inp.type = 'text';
+      inp.className = 'ansInput'; inp.placeholder = t.placeholder || 'Skriv svar …';
+      inp.onkeydown = function(e){ if (e.key === 'Enter') answerInput(t); };
+      ans.appendChild(inp);
+      var ci = document.createElement('button'); ci.id = 'mCheck'; ci.textContent = 'Tjek mit svar';
+      ci.onclick = function(){ answerInput(t); };
+      ans.appendChild(ci);
     } else {
       var c = document.createElement('button'); c.id = 'mCheck'; c.textContent = 'Tjek mit svar';
       c.onclick = function(){ checkBuild(t); };
@@ -1811,6 +1855,18 @@
       var bs = $('mAns').querySelectorAll('.ansBtn');
       for (var j=0;j<bs.length;j++) bs[j].disabled = true;
     } else { fb.className = 'no'; fb.textContent = 'Ikke helt – tænk over det og prøv igen. 🤔'; }
+  }
+  function answerInput(t){
+    var fb = $('mFb'); var el = $('mInput'); if (!el) return;
+    var raw = (el.value || '').replace(',', '.');
+    var match = raw.match(/-?\d+(\.\d+)?/);
+    if (!match){ fb.className = 'no'; fb.textContent = 'Skriv et tal som svar. ✍️'; return; }
+    var num = parseFloat(match[0]);
+    var tol = (t.tol != null) ? t.tol : 0.05;
+    if (Math.abs(num - t.solution) <= tol){
+      markSolved(t); fb.className = 'ok'; fb.textContent = '✓ Rigtigt! ' + t.reward;
+      el.disabled = true; var cb = $('mCheck'); if (cb) cb.disabled = true;
+    } else { fb.className = 'no'; fb.textContent = 'Ikke helt – tjek din ligning og prøv igen. 🤔'; }
   }
   function checkBuild(t){
     var fb = $('mFb');
