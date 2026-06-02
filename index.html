@@ -1,0 +1,2364 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Rumgeometri-verden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#16324f; --teal:#0e7c7b; --amber:#e9a23b; --pink:#e8657f;
+    --paper:#f4f9f8;
+    --font:"Fredoka","Trebuchet MS",-apple-system,system-ui,sans-serif;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; overflow:hidden; background:#bfe3e8; font-family:var(--font); color:var(--navy); }
+  #app{ position:fixed; inset:0; touch-action:none; }
+  canvas{ display:block; }
+  .ui{ position:fixed; z-index:10; user-select:none; }
+  .hidden{ display:none !important; }
+
+  /* Reticle */
+  #dot{ left:50%; top:50%; width:8px; height:8px; margin:-4px 0 0 -4px; border-radius:50%;
+    background:rgba(22,50,79,.55); box-shadow:0 0 0 2px rgba(255,255,255,.55); pointer-events:none; }
+
+  /* Titel */
+  #title{ top:14px; left:16px; padding:9px 15px 8px; background:rgba(22,50,79,.92); color:#fff;
+    border-radius:16px; box-shadow:0 8px 22px rgba(22,50,79,.28); font-weight:600; line-height:1; }
+  #title b{ color:var(--amber); }
+  #title span{ display:block; font-size:11px; font-weight:400; opacity:.82; margin-top:4px; }
+
+  /* Værktøjsvælger */
+  #tools{ top:14px; left:50%; transform:translateX(-50%); display:flex; gap:10px; }
+  .tool{ font-family:var(--font); font-size:15px; font-weight:600; color:var(--navy);
+    background:rgba(255,255,255,.93); border:3px solid transparent; border-radius:16px;
+    padding:9px 16px; cursor:pointer; line-height:1.1; box-shadow:0 5px 14px rgba(22,50,79,.18);
+    transition:transform .12s, border-color .12s; text-align:center; }
+  .tool small{ display:block; font-weight:400; font-size:11px; opacity:.7; margin-top:2px; }
+  .tool:hover{ transform:translateY(-2px); }
+  .tool.active{ border-color:var(--teal); background:#fff; }
+  .tool.active.pump{ border-color:var(--amber); }
+  .tool.active.gun{ border-color:#c0392b; }
+  .tool.active.pan{ border-color:#555; }
+  .tool.active.bazooka{ border-color:#3f7a3a; }
+  .tool.active.nuke{ border-color:#e8a23b; }
+
+  #flash{ position:fixed; inset:0; z-index:150; background:#fff; opacity:0; pointer-events:none; transition:opacity .08s; }
+  #flash.on{ opacity:.85; }
+  canvas.shake{ animation:scShake .07s linear 8; }
+  @keyframes scShake{
+    0%{ transform:translate(0,0) scale(1.05); }
+    25%{ transform:translate(-10px,7px) scale(1.05); }
+    50%{ transform:translate(9px,-9px) scale(1.05); }
+    75%{ transform:translate(-7px,-6px) scale(1.05); }
+    100%{ transform:translate(0,0) scale(1.05); }
+  }
+
+  #removeFig{ margin-top:7px; width:100%; font-family:var(--font); font-weight:600; font-size:13.5px; color:#fff;
+    background:#b0463a; border:none; border-radius:12px; padding:8px; cursor:pointer; }
+  #removeFig:active{ transform:scale(.98); }
+
+  #juggleBtn{ bottom:96px; left:50%; transform:translateX(-50%); font-family:var(--font); font-weight:700; font-size:16px;
+    color:#fff; background:#3aa869; border:none; border-radius:16px; padding:12px 22px; cursor:pointer; box-shadow:0 8px 20px rgba(58,168,105,.4); }
+  #juggle{ left:0; right:0; bottom:22px; z-index:80; display:flex; flex-direction:column; align-items:center; gap:9px; pointer-events:none; }
+  #juggle > *{ pointer-events:auto; }
+  #juggleTitle{ font-size:20px; font-weight:700; color:#fff; background:rgba(22,50,79,.88); padding:5px 16px; border-radius:13px; }
+  #juggleCount{ font-size:17px; font-weight:600; color:#fff; background:rgba(22,50,79,.85); padding:5px 14px; border-radius:12px; }
+  #juggleBarWrap{ position:relative; width:min(80vw,520px); height:34px; background:#13324a; border-radius:18px; overflow:hidden; box-shadow:0 6px 18px rgba(0,0,0,.3); }
+  #juggleZone{ position:absolute; left:42%; width:16%; top:0; bottom:0; background:rgba(58,168,105,.55); border-left:2px solid #6ee2a0; border-right:2px solid #6ee2a0; }
+  #juggleMarker{ position:absolute; top:0; bottom:0; width:6px; margin-left:-3px; left:0; background:#ffd23b; box-shadow:0 0 8px #ffd23b; }
+  #juggleMsg{ font-size:14px; font-weight:600; color:#fff; background:rgba(22,50,79,.85); padding:5px 14px; border-radius:12px; min-height:18px; text-align:center; max-width:90vw; }
+  #juggleBtns{ display:flex; gap:12px; margin-top:4px; }
+  #juggleSpark{ font-family:var(--font); font-weight:700; font-size:20px; color:#fff; background:#e9a23b; border:none; border-radius:16px; padding:14px 40px; cursor:pointer; box-shadow:0 8px 20px rgba(233,162,59,.45); }
+  #juggleQuit{ font-family:var(--font); font-weight:600; font-size:15px; color:var(--navy); background:#fff; border:none; border-radius:14px; padding:14px 20px; cursor:pointer; }
+
+  /* Info-panel (læring) */
+  #panel{ top:84px; right:14px; width:300px; max-width:calc(100vw - 28px);
+    background:rgba(255,255,255,.95); border-radius:18px; padding:14px 15px 13px;
+    box-shadow:0 12px 30px rgba(22,50,79,.25); animation:pop .25s ease both; }
+  #panelHead{ font-size:20px; font-weight:700; color:var(--navy); margin:0 0 2px; }
+  #panelSub{ font-size:11.5px; opacity:.7; margin-bottom:10px; }
+  .dim{ margin:9px 0; }
+  .dim label{ display:flex; justify-content:space-between; font-size:13px; font-weight:600; margin-bottom:3px; }
+  .dim label b{ color:var(--teal); font-weight:700; }
+  .dim input[type=range]{ width:100%; accent-color:var(--teal); height:22px; cursor:pointer; }
+  .dim .dval{ font-size:13px; font-weight:700; color:var(--teal); white-space:nowrap; }
+  .dim .dval input{ width:56px; font-family:var(--font); font-weight:700; font-size:13px; color:var(--navy);
+    border:2px solid #cfe0de; border-radius:8px; padding:3px 6px; text-align:right; }
+  .dim .dval input:focus{ outline:none; border-color:var(--teal); }
+  #formulas{ margin-top:12px; border-top:2px dashed #d6e7e5; padding-top:11px; }
+  .frow{ margin-bottom:9px; }
+  .flab{ font-size:11px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--teal); }
+  .flab.v{ color:var(--amber); }
+  .fexpr{ font-size:15.5px; margin:3px 0; word-break:break-word; }
+  .fres{ font-size:21px; font-weight:700; color:var(--navy); }
+  .fres small{ font-weight:500; font-size:13.5px; opacity:.75; }
+  .flab{ font-size:12.5px; }
+  #stackInfo{ display:none; margin-top:11px; background:#fff3e0; border:2px solid var(--amber); border-radius:12px;
+    padding:9px 11px; font-size:12.5px; line-height:1.45; color:var(--navy); }
+  #stackInfo b{ color:#c4862a; font-size:14px; }
+  #resetFig{ margin-top:11px; width:100%; font-family:var(--font); font-weight:600; font-size:14px;
+    color:#fff; background:var(--pink); border:none; border-radius:13px; padding:9px; cursor:pointer; }
+  #resetFig:active{ transform:scale(.98); }
+
+  /* Hint nederst */
+  #hint{ bottom:24px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,.92);
+    padding:9px 16px; border-radius:14px; font-size:13px; font-weight:500;
+    box-shadow:0 6px 16px rgba(22,50,79,.16); text-align:center; max-width:min(86vw,460px); }
+  #hint b{ color:var(--teal); }
+
+  /* Touch-knapper */
+  #pad{ bottom:18px; left:18px; display:grid; grid-template-columns:repeat(3,54px); grid-auto-rows:54px; gap:7px; }
+  .dbtn{ font-family:var(--font); font-size:23px; font-weight:600; color:#fff; background:rgba(22,50,79,.86);
+    border:none; border-radius:15px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 16px rgba(22,50,79,.3); touch-action:none; }
+  .dbtn:active{ transform:scale(.92); background:var(--teal); }
+  .dbtn.turn{ background:rgba(14,124,123,.86); font-size:21px; }
+  .empty{ visibility:hidden; }
+
+  /* Startskærm */
+  #start{ inset:0; z-index:50; background:linear-gradient(160deg,#bfe3e8,#8fc9c7);
+    display:flex; align-items:center; justify-content:center; }
+  #card{ background:#fff; border-radius:24px; padding:30px 32px; max-width:440px; width:calc(100vw - 36px);
+    box-shadow:0 24px 60px rgba(22,50,79,.3); text-align:center; }
+  #card h1{ margin:0 0 4px; font-size:30px; color:var(--navy); }
+  #card h1 b{ color:var(--amber); }
+  #card p{ font-size:14px; line-height:1.5; color:#3a5168; }
+  #card .keys{ text-align:left; font-size:13.5px; background:var(--paper); border-radius:14px;
+    padding:13px 15px; margin:14px 0; line-height:1.8; }
+  #card .keys b{ color:var(--teal); }
+  #go{ font-family:var(--font); font-weight:700; font-size:18px; color:#fff; background:var(--teal);
+    border:none; border-radius:16px; padding:13px 34px; cursor:pointer; box-shadow:0 8px 20px rgba(14,124,123,.4); }
+  #go:active{ transform:scale(.97); }
+  #restart{ display:block; margin:12px auto 0; font-family:var(--font); font-weight:600; font-size:14px;
+    color:#b0463a; background:#fff; border:2px solid #e3b7b1; border-radius:13px; padding:9px 20px; cursor:pointer; }
+  #restart:active{ transform:scale(.97); }
+
+  /* Topbjælke højre */
+  #topRight{ top:12px; right:12px; display:flex; gap:8px; align-items:center; }
+  #klodser{ background:rgba(22,50,79,.92); color:#fff; font-weight:700; font-size:14px;
+    padding:10px 13px; border-radius:14px; box-shadow:0 6px 16px rgba(22,50,79,.28);
+    white-space:nowrap; transition:transform .12s; }
+  #klodser.bump{ transform:scale(1.18); }
+  #bygBtn,#tasksBtn,#formelBtn,#quizBtn{ font-family:var(--font); font-weight:700; font-size:14px; color:#fff; border:none;
+    border-radius:14px; padding:10px 14px; cursor:pointer; box-shadow:0 6px 16px rgba(22,50,79,.28); white-space:nowrap; }
+  #bygBtn{ background:var(--amber); }
+  #tasksBtn{ background:var(--teal); }
+  #formelBtn{ background:#5a7bb5; }
+  #quizBtn{ background:#b06ac0; }
+  #bygBtn:active,#tasksBtn:active,#formelBtn:active,#quizBtn:active{ transform:scale(.97); }
+
+  /* Formelsamling */
+  #formelPanel{ top:62px; right:14px; width:330px; max-width:calc(100vw - 28px); max-height:78vh; overflow:auto;
+    background:rgba(255,255,255,.97); border-radius:18px; padding:14px 16px; box-shadow:0 12px 30px rgba(22,50,79,.28);
+    animation:pop .2s ease both; }
+  #formelPanel .fpHead{ display:flex; justify-content:space-between; align-items:center; }
+  #formelPanel h3{ margin:0; font-size:17px; }
+  #formelClose{ background:none; border:none; font-size:20px; cursor:pointer; color:var(--navy); }
+  .fpSub{ font-size:12px; color:#3a5168; margin:5px 0 10px; }
+  .fSec{ font-size:13px; font-weight:700; color:#0e7c7b; letter-spacing:.4px; text-transform:uppercase; margin:13px 0 5px; }
+  .fItem{ font-size:15.5px; line-height:1.55; margin:4px 0; color:var(--navy); }
+  .fItem b{ color:#16324f; }
+  .fItem .o{ color:#0e7c7b; font-weight:700; } .fItem .v{ color:#c4862a; font-weight:700; }
+
+  /* Quiz */
+  #quizModal{ inset:0; z-index:70; background:rgba(16,40,60,.55); display:flex; align-items:center; justify-content:center; }
+  #quizCard{ background:#fff; border-radius:22px; padding:22px 24px; width:min(460px,calc(100vw - 32px));
+    max-height:88vh; overflow:auto; box-shadow:0 24px 60px rgba(22,50,79,.35); }
+  #quizCard h2{ margin:0; font-size:22px; }
+  #quizClose{ background:none; border:none; font-size:22px; cursor:pointer; color:var(--navy); }
+  #quizQ{ font-size:17px; font-weight:600; line-height:1.45; margin:6px 0 12px; }
+  #quizA{ display:flex; flex-direction:column; gap:8px; }
+  .quizBtn{ font-family:var(--font); font-weight:600; font-size:15px; color:var(--navy); background:var(--paper);
+    border:2px solid transparent; border-radius:12px; padding:11px 14px; cursor:pointer; text-align:left; }
+  .quizBtn:hover{ border-color:var(--teal); }
+  .quizBtn:disabled{ cursor:default; }
+  .quizBtn.right{ background:#dcf3e4; border-color:#3aa869; }
+  .quizBtn.wrong{ background:#ffe0e0; border-color:#d2553f; }
+  #quizFb{ font-size:14px; font-weight:600; margin-top:11px; line-height:1.45; }
+  #quizNext{ margin-top:12px; width:100%; font-family:var(--font); font-weight:700; font-size:16px; color:#fff;
+    background:#b06ac0; border:none; border-radius:13px; padding:11px; cursor:pointer; }
+
+  /* Byg-vindue */
+  #buildModal{ inset:0; z-index:40; background:rgba(16,40,60,.5); display:flex; align-items:center; justify-content:center; }
+  #buildCard{ background:#fff; border-radius:22px; padding:20px 22px; width:min(440px,calc(100vw - 32px));
+    max-height:88vh; overflow:auto; box-shadow:0 24px 60px rgba(22,50,79,.35); }
+  #buildCard .bHead{ display:flex; justify-content:space-between; align-items:center; }
+  #buildCard h2{ margin:0; font-size:22px; }
+  #buildClose{ background:none; border:none; font-size:22px; cursor:pointer; color:var(--navy); }
+  .bSub{ font-size:12.5px; color:#3a5168; margin:5px 0 13px; line-height:1.45; }
+  #buildChoices{ display:flex; flex-wrap:wrap; gap:7px; margin-bottom:6px; }
+  .choice{ font-family:var(--font); font-weight:600; font-size:13px; color:var(--navy); background:var(--paper);
+    border:2px solid transparent; border-radius:11px; padding:8px 13px; cursor:pointer; }
+  .choice.sel{ border-color:var(--teal); background:#e6f2f0; }
+  #buildCost{ font-size:13px; margin:11px 0; line-height:1.55; }
+  #buildCost b{ color:var(--teal); }
+  #doBuild{ width:100%; font-family:var(--font); font-weight:700; font-size:16px; color:#fff; background:var(--teal);
+    border:none; border-radius:14px; padding:12px; cursor:pointer; }
+  #doBuild:disabled{ background:#9fb6b4; cursor:default; }
+
+  #toast{ bottom:120px; left:50%; transform:translateX(-50%) translateY(10px); opacity:0; pointer-events:none;
+    background:rgba(22,50,79,.95); color:#fff; font-weight:600; font-size:15px; padding:11px 20px; border-radius:14px;
+    box-shadow:0 10px 26px rgba(22,50,79,.35); transition:opacity .2s, transform .2s; z-index:60; max-width:80vw; text-align:center; }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  #manSpeech{ top:70px; left:50%; transform:translateX(-50%); max-width:min(86vw,460px);
+    background:#fff; color:var(--navy); border:3px solid #5a7bb5; border-radius:16px; padding:9px 15px;
+    font-size:13.5px; font-weight:600; line-height:1.45; box-shadow:0 8px 20px rgba(22,50,79,.25);
+    opacity:0; pointer-events:none; transition:opacity .2s; z-index:18; text-align:center; }
+  #manSpeech.show{ opacity:1; }
+
+  #jumpscare{ position:fixed; inset:0; z-index:200; display:none; }
+  #jumpscare.show{ display:block; }
+  #jumpscare canvas{ width:100%; height:100%; display:block; }
+  #jumpscare.show canvas{ animation:jsshake .07s linear infinite; }
+  @keyframes jsshake{
+    0%{ transform:translate(0,0) scale(1.06); }
+    20%{ transform:translate(-14px,9px) scale(1.06); }
+    40%{ transform:translate(12px,-11px) scale(1.06); }
+    60%{ transform:translate(-10px,-8px) scale(1.06); }
+    80%{ transform:translate(11px,12px) scale(1.06); }
+    100%{ transform:translate(0,0) scale(1.06); }
+  }
+
+  /* Kode-vindue (lærer) */
+  #codeModal{ inset:0; z-index:65; background:rgba(16,40,60,.55); display:flex; align-items:center; justify-content:center; }
+  #codeCard{ background:#fff; border-radius:20px; padding:22px 24px; width:min(340px,calc(100vw - 36px));
+    text-align:center; box-shadow:0 24px 60px rgba(22,50,79,.35); }
+  #codeCard h2{ margin:0 0 4px; font-size:20px; }
+  #codeCard p{ font-size:12.5px; color:#3a5168; margin:4px 0 12px; }
+  #codeInput{ width:100%; font-family:var(--font); font-size:22px; text-align:center; letter-spacing:5px;
+    border:2px solid #cfe0de; border-radius:12px; padding:10px; margin-bottom:6px; }
+  #codeInput:focus{ outline:none; border-color:var(--teal); }
+  #codeErr{ color:#d2553f; font-size:12.5px; font-weight:600; min-height:16px; margin-bottom:8px; }
+  #codeBtns{ display:flex; gap:8px; }
+  #codeBtns button{ flex:1; font-family:var(--font); font-weight:700; font-size:15px; border:none;
+    border-radius:13px; padding:11px; cursor:pointer; }
+  #codeOk{ background:var(--teal); color:#fff; }
+  #codeCancel{ background:var(--paper); color:var(--navy); }
+
+  .choice.comp{ background:#fff3e0; }
+  .choice.comp.sel{ border-color:var(--amber); background:#ffe3bd; }
+
+  /* Pokal / samling */
+  #trophy{ inset:0; z-index:55; background:linear-gradient(160deg,#fff3d6,#ffe0a3);
+    display:flex; align-items:center; justify-content:center; }
+  #trophy .tcard{ background:#fff; border-radius:24px; padding:26px 30px; max-width:470px;
+    width:calc(100vw - 36px); text-align:center; box-shadow:0 24px 60px rgba(22,50,79,.3); }
+  #trophy .big{ font-size:56px; margin:2px 0 6px; }
+  #trophy h1{ margin:0 0 6px; font-size:28px; color:var(--navy); }
+  #trophy p{ font-size:14px; color:#3a5168; line-height:1.5; margin:8px 0; }
+  #trophy p b{ color:var(--amber); }
+  #trophy .grid{ display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin:14px 0; }
+  #trophy .chip{ background:var(--paper); border-radius:11px; padding:7px 12px; font-size:13px; font-weight:600; color:var(--navy); }
+  #trophyGo{ font-family:var(--font); font-weight:700; font-size:17px; color:#fff; background:var(--amber);
+    border:none; border-radius:16px; padding:12px 32px; cursor:pointer; box-shadow:0 8px 20px rgba(233,162,59,.4); margin-top:4px; }
+  #trophyGo:active{ transform:scale(.97); }
+  #tasksPanel{ top:62px; left:16px; width:300px; max-width:calc(100vw - 32px); max-height:64vh; overflow:auto;
+    background:rgba(255,255,255,.96); border-radius:18px; padding:12px 13px;
+    box-shadow:0 12px 30px rgba(22,50,79,.25); animation:pop .2s ease both; }
+  #tasksPanel h3{ margin:2px 4px 9px; font-size:15px; }
+  .adminbar{ background:#fff3e0; border:2px dashed var(--amber); border-radius:12px; padding:8px;
+    margin-bottom:9px; display:flex; gap:6px; flex-wrap:wrap; }
+  .adminbar button{ font-family:var(--font); font-weight:600; font-size:12px; border:none; border-radius:9px;
+    padding:7px 10px; cursor:pointer; background:var(--amber); color:#fff; }
+  .skipBtn{ margin-left:auto; align-self:center; font-family:var(--font); font-weight:600; font-size:11.5px;
+    border:none; border-radius:9px; padding:6px 9px; cursor:pointer; background:#e08a2a; color:#fff; white-space:nowrap; }
+  .task{ display:flex; gap:9px; align-items:flex-start; padding:9px 10px; border-radius:12px; cursor:pointer;
+    background:var(--paper); margin-bottom:7px; transition:background .12s; }
+  .task:hover{ background:#e6f2f0; }
+  .task.done{ opacity:.62; }
+  .task.cur{ outline:2px solid var(--teal); }
+  .task .tk{ font-size:16px; line-height:1.3; }
+  .task .tt{ font-size:13px; font-weight:600; line-height:1.3; }
+  .task .tt small{ display:block; font-weight:400; opacity:.7; font-size:11px; margin-top:2px; }
+
+  #mission{ top:70px; left:50%; transform:translateX(-50%); width:min(92vw,520px);
+    background:rgba(22,50,79,.95); color:#fff; border-radius:16px; padding:12px 15px;
+    box-shadow:0 12px 30px rgba(22,50,79,.35); animation:pop .2s ease both; z-index:20; }
+  #mission .mh{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  #mTag{ font-size:11px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--amber); }
+  #mClose{ background:none; border:none; color:#fff; font-size:18px; cursor:pointer; opacity:.7; line-height:1; }
+  #mPrompt{ font-size:14.5px; margin:4px 0 7px; line-height:1.45; }
+  #mUse{ font-size:11.5px; opacity:.85; margin-bottom:9px; }
+  #mUse b{ color:#7fd6cf; }
+  #mAns{ display:flex; flex-wrap:wrap; gap:7px; }
+  .ansBtn,#mCheck{ font-family:var(--font); font-weight:600; font-size:13.5px; border:none;
+    border-radius:11px; padding:9px 14px; cursor:pointer; }
+  .ansBtn{ background:#fff; color:var(--navy); }
+  .ansBtn:active{ transform:scale(.97); }
+  .ansBtn:disabled{ opacity:.45; cursor:default; }
+  #mCheck{ background:var(--amber); color:#fff; }
+  #mFb{ margin-top:9px; font-size:13px; font-weight:500; line-height:1.45; }
+  #mFb.ok{ color:#b9f0cf; }
+  #mFb.no{ color:#ffd6ad; }
+  #mHelp{ margin-top:10px; width:100%; font-family:var(--font); font-weight:600; font-size:13.5px; color:#fff;
+    background:#5a7bb5; border:none; border-radius:11px; padding:9px; cursor:pointer; }
+  #mHelp:active{ transform:scale(.98); }
+  #mHint{ display:none; margin-top:8px; background:rgba(255,255,255,.14); border-radius:11px; padding:9px 11px;
+    font-size:13px; line-height:1.5; color:#eaf3ff; }
+  #mHint b{ color:#9fd6ff; }
+
+  @keyframes pop{ from{ opacity:0; transform:translateY(8px) scale(.98);} to{opacity:1;} }
+  @media (max-width:620px){
+    #title span{ display:none; } #hint{ display:none; }
+    #panel{ top:auto; bottom:120px; right:8px; width:250px; font-size:13px; }
+    .tool small{ display:none; }
+  }
+</style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="dot" class="ui"></div>
+  <div id="title" class="ui">Rumgeometri<b>-verden</b><span>Hak figuren mindre · pump den større · træk i målene</span></div>
+
+  <div id="tools" class="ui">
+    <button class="tool pick active" id="toolPick">⛏️ Hakke<small>1 · mindre / mine</small></button>
+    <button class="tool pump" id="toolPump">🚲 Pumpe<small>2 · gør større</small></button>
+    <button class="tool gun hidden" id="toolGun">🔫 Pistol<small>3 · skyd</small></button>
+    <button class="tool pan hidden" id="toolPan">🍳 Pande<small>4 · slå</small></button>
+    <button class="tool bazooka hidden" id="toolBazooka">🚀 Bazooka<small>5 · BOOM</small></button>
+    <button class="tool nuke hidden" id="toolNuke">☢️ Atombombe<small>6 · ☠️</small></button>
+  </div>
+
+  <div id="panel" class="ui hidden">
+    <div id="panelHead">Figur</div>
+    <div id="panelSub">Træk i målene for at ændre siderne</div>
+    <div id="dimList"></div>
+    <div id="formulas">
+      <div class="frow">
+        <div class="flab">Overfladeareal</div>
+        <div class="fexpr" id="oExpr"></div>
+        <div class="fres" id="oRes"></div>
+      </div>
+      <div class="frow">
+        <div class="flab v">Rumfang</div>
+        <div class="fexpr" id="vExpr"></div>
+        <div class="fres" id="vRes"></div>
+      </div>
+    </div>
+    <div id="stackInfo"></div>
+    <button id="resetFig">↺ Nulstil figuren</button>
+    <button id="removeFig">🗑️ Fjern figuren (reset)</button>
+  </div>
+
+  <div id="hint" class="ui">Gå hen til en figur og tryk <b>E</b> eller <b>klik</b> for at bruge værktøjet</div>
+
+  <div id="pad" class="ui">
+    <button class="dbtn turn" id="bTurnL">↶</button>
+    <button class="dbtn" id="bFwd">▲</button>
+    <button class="dbtn turn" id="bTurnR">↷</button>
+    <button class="dbtn" id="bLeft">◀</button>
+    <button class="dbtn" id="bBack">▼</button>
+    <button class="dbtn" id="bRight">▶</button>
+  </div>
+
+  <div id="topRight" class="ui">
+    <div id="klodser">🧊 0</div>
+    <button id="bygBtn">🔨 Byg</button>
+    <button id="formelBtn">📖 Formler</button>
+    <button id="tasksBtn">📋 Opgaver</button>
+    <button id="quizBtn" class="hidden">🎓 Quiz</button>
+  </div>
+  <div id="formelPanel" class="ui hidden">
+    <div class="fpHead"><h3>📖 Formelsamling</h3><button id="formelClose">✕</button></div>
+    <p class="fpSub">Formlerne dukker op, efterhånden som du låser figurerne op.</p>
+    <div id="formelBody"></div>
+  </div>
+  <div id="tasksPanel" class="ui hidden">
+    <h3>Opgaver – brug hovedet 🧠</h3>
+    <div id="taskList"></div>
+  </div>
+  <div id="mission" class="ui hidden">
+    <div class="mh"><span id="mTag">Opgave</span><button id="mClose">✕</button></div>
+    <div id="mPrompt"></div>
+    <div id="mUse"></div>
+    <div id="mAns"></div>
+    <div id="mFb"></div>
+    <button id="mHelp">💬 Bed om hjælp</button>
+    <div id="mHint"></div>
+  </div>
+
+  <div id="buildModal" class="ui hidden">
+    <div id="buildCard">
+      <div class="bHead"><h2>🔨 Byg en figur</h2><button id="buildClose">✕</button></div>
+      <p class="bSub">1 klods = 1 liter = 1 dm³. En figur koster lige så mange klodser, som dens rumfang er. Vælg figur, træk i målene, og se prisen.</p>
+      <div id="buildChoices"></div>
+      <div id="buildDims"></div>
+      <div id="buildCost"></div>
+      <button id="doBuild">Byg</button>
+    </div>
+  </div>
+  <div id="toast" class="ui"></div>
+  <div id="manSpeech" class="ui"></div>
+  <div id="jumpscare"><canvas id="jsCanvas"></canvas></div>
+  <div id="flash"></div>
+
+  <button id="juggleBtn" class="ui hidden">⚽ Jonglér med bolden</button>
+  <div id="juggle" class="ui hidden">
+    <div id="juggleTitle">⚽ Jonglér-minispil</div>
+    <div id="juggleCount">Jongleringer: 0</div>
+    <div id="juggleBarWrap"><div id="juggleZone"></div><div id="juggleMarker"></div></div>
+    <div id="juggleMsg"></div>
+    <div id="juggleBtns"><button id="juggleSpark">SPARK! ⚽</button><button id="juggleQuit">Stop</button></div>
+  </div>
+
+  <div id="quizModal" class="ui hidden">
+    <div id="quizCard">
+      <div class="bHead"><h2>🎓 Afsluttende quiz</h2><button id="quizClose">✕</button></div>
+      <p class="bSub" id="quizSub">Test om du kan huske formlerne — uden formelsamlingen!</p>
+      <div id="quizQ"></div>
+      <div id="quizA"></div>
+      <div id="quizFb"></div>
+      <button id="quizNext" class="hidden">Næste ▶</button>
+    </div>
+  </div>
+
+  <div id="codeModal" class="ui hidden">
+    <div id="codeCard">
+      <h2>🔑 Lærer-kode</h2>
+      <p>Indtast koden for at åbne lærer-tilstand.</p>
+      <input id="codeInput" type="password" inputmode="text" autocomplete="off" placeholder="••••">
+      <div id="codeErr"></div>
+      <div id="codeBtns">
+        <button id="codeCancel">Annullér</button>
+        <button id="codeOk">Lås op</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="trophy" class="ui hidden">
+    <div class="tcard">
+      <div class="big">🏆</div>
+      <h1>Alle figurer låst op!</h1>
+      <p>Flot arbejde – du har mestret alle de rumlige figurer:</p>
+      <div class="grid">
+        <span class="chip">✅ Terning</span><span class="chip">✅ Kasse</span><span class="chip">✅ Cylinder</span>
+        <span class="chip">✅ Kegle</span><span class="chip">✅ Pyramide</span><span class="chip">✅ Kugle</span><span class="chip">✅ Prisme</span>
+      </div>
+      <p>🏗️ Nu kan du <b>sammensætte figurer selv</b>: stil fx en pyramide oven på en kasse for at lave et hus, eller en kegle oven på en cylinder for en raket. Byg en figur, mens du står ved en anden, så snapper den ovenpå! (Og <b>Silo</b> er nu åben i Byg-menuen.)</p>
+      <button id="trophyGo">Fortsæt ▶</button>
+    </div>
+  </div>
+
+  <div id="start" class="ui">
+    <div id="card">
+      <h1>Rumgeometri<b>-verden</b></h1>
+      <p>En tom 3D-verden, hvor du <b>selv bygger alt</b>: hak malm for klodser, byg rumlige figurer i Byg-menuen, og lås nye figurer op ved at løse bygge-opgaver.</p>
+      <div class="keys">
+        <b>1.</b> Hak grønne malm-blokke med ⛏️ → få klodser<br>
+        <b>2.</b> Tryk <b>🔨 Byg</b> → byg en terning (1 klods = 1 liter)<br>
+        <b>3.</b> Løs opgaver (📋) → lås kasse, cylinder … op<br>
+        <hr style="border:none;border-top:1px solid #e3eeec;margin:7px 0">
+        <b>WASD</b> gå · <b>mellemrum</b> hop · <b>træk musen</b> drej kamera<br>
+        <b>1/2</b> hakke/pumpe · <b>E</b>/klik brug · gå hen til en bygget figur for at justere
+      </div>
+      <button id="go">Start ▶</button>
+      <button id="restart" class="hidden">🔄 Start forfra</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+/* Rumgeometri-verden – interaktivt 3D-læringsspil
+   Tredjepersons blokfigur · hakke (mindre) + pumpe (større) · live overflade/rumfang */
+(function () {
+  'use strict';
+
+  var WS = 0.03;                 // 1 cm = 0.03 verdensenheder
+  var PI = Math.PI;
+  var COL = {
+    sky: 0xbfe3e8, ground: 0x9bd0c9, grid: 0x7bbdb6,
+    ink: 0x16324f, fig: 0x4fb3ad, figHi: 0x7fd6cf, tile: 0xeaf4f3,
+    ped: 0xcfe7e3,
+  };
+
+  // ---- Figur-data (mål i cm) ----
+  var FIGS = [
+    { key:'terning',  navn:'Terning',  dims:{s:60},            oForm:'6·s²',          vForm:'s³' },
+    { key:'kasse',    navn:'Kasse',    dims:{l:80,b:50,h:45},  oForm:'2(lb+lh+bh)',   vForm:'l·b·h' },
+    { key:'cylinder', navn:'Cylinder', dims:{r:30,h:85},       oForm:'2πr²+2πrh',     vForm:'πr²h' },
+    { key:'kegle',    navn:'Kegle',    dims:{r:40,h:90},       oForm:'πr²+πr·s',      vForm:'⅓πr²h' },
+    { key:'pyramide', navn:'Pyramide', dims:{a:70,h:85},       oForm:'a²+2·a·l',      vForm:'⅓a²h' },
+    { key:'kugle',    navn:'Kugle',    dims:{r:45},            oForm:'4πr²',          vForm:'⁴⁄₃πr³' },
+    { key:'prisme',   navn:'Prisme',   dims:{a:60,b:45,L:95},  oForm:'2·G + omkreds·h', vForm:'G·h' },
+  ];
+  var DIMMETA = {
+    terning:[{k:'s',label:'Sidelængde s'}],
+    kasse:[{k:'l',label:'Længde l'},{k:'b',label:'Bredde b'},{k:'h',label:'Højde h'}],
+    cylinder:[{k:'r',label:'Radius r'},{k:'h',label:'Højde h'}],
+    kegle:[{k:'r',label:'Radius r'},{k:'h',label:'Højde h'}],
+    pyramide:[{k:'a',label:'Grundkant a'},{k:'h',label:'Højde h'}],
+    kugle:[{k:'r',label:'Radius r'}],
+    prisme:[{k:'a',label:'Katete a'},{k:'b',label:'Katete b'},{k:'L',label:'Længde L'}],
+  };
+
+  var scene, camera, renderer, clock, avatar, rightArm, leftArm, legL, legR, maxAniso = 1;
+  var pickModel, pumpModel;
+  var camYaw = 0, camPitch = 0.5, camDist = 8.5;
+  var pos = new THREE.Vector3(0, 0, 0);     // avatarens fodposition
+  var facing = 0, walkPhase = 0;
+  var vy = 0, onGround = true;          // lodret hop
+  var JUMP = 7.5, GRAV = 22;
+  var idleTime = 0, car = null, knocked = 0;   // stå-stille-bil
+  var prevCamYaw = 0, prevCamPitch = 0.5;
+  var pigs = [], wolves = [], wolfTimer = 0;   // dyr
+  var gunPickup = null, hasGun = false, gunModel = null;   // pistol
+  var hasPan = false, hasBazooka = false, hasNuke = false;  // milepæls-våben
+  var panModel = null, bazookaModel = null, nukeModel = null;
+  var heldBall = false, fallingBirds = [];                  // kugle-minispil
+  var juggleActive = false, jugglePos = 0, juggleDir = 1, juggleSpeed = 0.9, juggleCount = 0;
+  var juggleBall = null, ballState = '', ballBob = 0, ballVel = null, manKick = 0;
+  var hasSkateboard = false, skateModel = null, moveSpeed = 6;   // skateboard-belønning
+  var man = null, manBubble = null, manHits = 0, manSay = 5, manBubbleTimer = 0, manLaugh = 0, manWalk = 0, lastSolved = null;
+  var helpIndex = 0, stuckTime = 0, stuckTaskId = null, autoHelped = false;
+  var throwCount = 0;
+  var keys = {};
+  var moveBtn = { fwd:false, back:false, left:false, right:false, turnL:false, turnR:false };
+  var tool = 'pick';            // 'pick' | 'pump'
+  var useT = -1, useApplied = false;   // værktøjs-swing
+  var active = null;            // aktiv figur
+  var UP = new THREE.Vector3(0,1,0);
+  var PLAZA = 26;
+
+  // ---- progression / ressourcer ----
+  var unlocked = { terning:true };   // resten låses op via opgaver
+  var klodser = 0;                   // 1 klods = 1 liter = 1 dm³
+  var KLODS_GAIN = 25;
+  var nodes = [], built = [];
+  var targetNode = null, targetNodeCloser = false, lastHint = '';
+  var buildKey = null, buildDims = null;
+  var builtColors = [0xe9a23b, 0xe8657f, 0x6fa8e8, 0x6fc06b, 0xb78fe0, 0x4fb3ad];
+  var toastTimer = null;
+  var compositesUnlocked = false;
+  var admin = false;
+  /* ===== DON'T SWROOP! I'm watching you! ===== */
+  var ADMIN_CODE = '1234';   // ←–– SKIFT denne til din egen lærer-kode
+
+  // ---- DOM ----
+  var $ = function(id){ return document.getElementById(id); };
+  var panel = $('panel'), dimList = $('dimList');
+  var oExprEl = $('oExpr'), oResEl = $('oRes'), vExprEl = $('vExpr'), vResEl = $('vRes');
+
+  // ===== Hjælpere =====
+  function g(n){ n = Math.round(n); return ('' + n).replace(/\B(?=(\d{3})+(?!\d))/g, ' '); }
+  function liters(cm3){ var L = cm3 / 1000; return L < 10 ? L.toFixed(1).replace('.', ',') : g(L); }
+
+  function init(){
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(COL.sky);
+    scene.fog = new THREE.Fog(COL.sky, 34, 90);
+
+    camera = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, 0.1, 300);
+    clock = new THREE.Clock();
+
+    renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    $('app').appendChild(renderer.domElement);
+    try { maxAniso = renderer.capabilities.getMaxAnisotropy() || 1; } catch (e) { maxAniso = 1; }
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x86a9a4, 1.0));
+    var sun = new THREE.DirectionalLight(0xffffff, 0.65);
+    sun.position.set(12, 20, 9); scene.add(sun);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+    buildWorld();
+    buildNodes();
+    buildAvatar();
+    buildFigures();
+    buildHospital();
+    buildTallTree();
+    placeGunPickup();
+    spawnPigs(6);
+    bindInput();
+    var hasSave = loadGame();
+    if (hasSave){ $('go').textContent = 'Fortsæt ▶'; $('restart').classList.remove('hidden'); }
+    saveEnabled = true;   // herefter gemmes ændringer
+    animate();
+  }
+
+  // ===== Verden =====
+  function buildWorld(){
+    var ground = new THREE.Mesh(new THREE.PlaneGeometry(220,220),
+      new THREE.MeshLambertMaterial({ color:COL.ground }));
+    ground.rotation.x = -PI/2; scene.add(ground);
+    var grid = new THREE.GridHelper(220, 110, COL.grid, COL.grid);
+    grid.position.y = 0.02; grid.material.opacity = 0.4; grid.material.transparent = true;
+    scene.add(grid);
+
+    // Blokfigur-træer i en ydre ring
+    var treeCol = [0x6fc06b, 0x57b3a0, 0xe9a23b, 0xe8657f];
+    for (var i=0;i<14;i++){
+      var a = (i/14)*PI*2, R = 40 + (i%3)*4;
+      var t = new THREE.Group(); t.position.set(Math.sin(a)*R, 0, Math.cos(a)*R);
+      var trunk = new THREE.Mesh(new THREE.BoxGeometry(0.8,2.4,0.8),
+        new THREE.MeshLambertMaterial({ color:0x8a6240 }));
+      trunk.position.y = 1.2; t.add(trunk);
+      var leaf = new THREE.Mesh(new THREE.BoxGeometry(2.6,2.6,2.6),
+        new THREE.MeshLambertMaterial({ color:treeCol[i%treeCol.length] }));
+      leaf.position.y = 3.6; t.add(leaf);
+      scene.add(t);
+    }
+    // Skyer
+    for (var c=0;c<8;c++){
+      var cl = new THREE.Mesh(new THREE.SphereGeometry(2.4,14,10),
+        new THREE.MeshLambertMaterial({ color:0xffffff }));
+      var ang = (c/8)*PI*2;
+      cl.position.set(Math.sin(ang)*26, 15 + (c%3)*2, Math.cos(ang)*26);
+      cl.scale.set(1.8,1,1.4); scene.add(cl);
+    }
+  }
+
+  // ===== Avatar (blokfigur i tredjeperson) =====
+  function faceTexture(){
+    var cv = document.createElement('canvas'); cv.width = cv.height = 128;
+    var x = cv.getContext('2d');
+    x.fillStyle = '#f2c14e'; x.fillRect(0,0,128,128);
+    x.fillStyle = '#16324f';
+    x.beginPath(); x.arc(44,54,9,0,7); x.fill();
+    x.beginPath(); x.arc(84,54,9,0,7); x.fill();
+    x.lineWidth = 7; x.strokeStyle = '#16324f'; x.lineCap = 'round';
+    x.beginPath(); x.arc(64,72,22,0.15*PI,0.85*PI); x.stroke();
+    return new THREE.CanvasTexture(cv);
+  }
+
+  function buildAvatar(){
+    avatar = new THREE.Group();
+    var skin = new THREE.MeshLambertMaterial({ color:0xf2c14e });
+    var shirt = new THREE.MeshLambertMaterial({ color:0x2f8fb3 });
+    var pants = new THREE.MeshLambertMaterial({ color:0x3a8a64 });
+
+    var torso = new THREE.Mesh(new THREE.BoxGeometry(0.95,1.2,0.5), shirt);
+    torso.position.y = 1.6; avatar.add(torso);
+
+    var headFace = new THREE.MeshLambertMaterial({ map:faceTexture() });
+    var headMats = [skin, skin, skin, skin, headFace, skin]; // +Z = forside (idx 4)
+    var head = new THREE.Mesh(new THREE.BoxGeometry(0.72,0.72,0.72), headMats);
+    head.position.y = 2.56; avatar.add(head);
+
+    function limb(w,h,d,mat,px,py){
+      var pivot = new THREE.Group(); pivot.position.set(px,py,0);
+      var m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat); m.position.y = -h/2;
+      pivot.add(m); avatar.add(pivot); return pivot;
+    }
+    leftArm  = limb(0.34,1.05,0.4, shirt, -0.655, 2.15);
+    rightArm = limb(0.34,1.05,0.4, shirt,  0.655, 2.15);
+    legL = limb(0.4,1.0,0.46, pants, -0.24, 1.0);
+    legR = limb(0.4,1.0,0.46, pants,  0.24, 1.0);
+
+    // Værktøjer i højre hånd
+    pickModel = makePick(); pumpModel = makePump();
+    pickModel.position.set(0,-1.05,0.12); pumpModel.position.set(0,-1.05,0.12);
+    rightArm.add(pickModel); rightArm.add(pumpModel);
+    pumpModel.visible = false;
+    gunModel = makePistol(); gunModel.position.set(0,-1.0,0.16); rightArm.add(gunModel); gunModel.visible = false;
+    panModel = makePan(); rightArm.add(panModel); panModel.visible = false;
+    bazookaModel = makeBazooka(); rightArm.add(bazookaModel); bazookaModel.visible = false;
+    nukeModel = makeNuke(); rightArm.add(nukeModel); nukeModel.visible = false;
+
+    scene.add(avatar);
+  }
+
+  function makePick(){
+    var grp = new THREE.Group();
+    var handle = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,1.1,10),
+      new THREE.MeshLambertMaterial({ color:0x8a6240 }));
+    handle.position.y = -0.4; grp.add(handle);
+    var head = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.16,0.16),
+      new THREE.MeshLambertMaterial({ color:0x9aa6ad }));
+    head.position.y = 0.1; grp.add(head);
+    grp.rotation.z = -0.5; return grp;
+  }
+  function makePump(){
+    var grp = new THREE.Group();
+    var body = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.12,0.9,16),
+      new THREE.MeshLambertMaterial({ color:0x2f6fb3 }));
+    grp.add(body);
+    var handle = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.07,0.1),
+      new THREE.MeshLambertMaterial({ color:0x16324f }));
+    handle.position.y = 0.5; grp.add(handle);
+    var hose = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.5,8),
+      new THREE.MeshLambertMaterial({ color:0x333a40 }));
+    hose.position.set(0.12,-0.45,0); hose.rotation.z = 0.7; grp.add(hose);
+    grp.rotation.z = -0.35; return grp;
+  }
+
+  // ----- Stå-stille-bil (easter-egg) -----
+  function makeCar(){
+    var c = new THREE.Group();
+    var body = new THREE.Mesh(new THREE.BoxGeometry(1.4,0.7,2.8),
+      new THREE.MeshLambertMaterial({ color:0xe8425a }));
+    body.position.y = 0.75; c.add(body);
+    var cabin = new THREE.Mesh(new THREE.BoxGeometry(1.2,0.6,1.3),
+      new THREE.MeshLambertMaterial({ color:0x9fdfff }));
+    cabin.position.set(0,1.25,-0.1); c.add(cabin);
+    var wMat = new THREE.MeshLambertMaterial({ color:0x1a1a1a });
+    [[0.78,0.95],[-0.78,0.95],[0.78,-0.95],[-0.78,-0.95]].forEach(function(w){
+      var wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.38,0.3,16), wMat);
+      wheel.rotation.z = PI/2; wheel.position.set(w[0],0.38,w[1]); c.add(wheel);
+    });
+    var lite = new THREE.MeshLambertMaterial({ color:0xfff2a0 });
+    [0.45,-0.45].forEach(function(x){
+      var l = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.1), lite);
+      l.position.set(x,0.75,1.45); c.add(l);
+    });
+    return c;
+  }
+  function spawnCar(){
+    car = makeCar();
+    var ang = Math.random()*PI*2;
+    var sx = pos.x + Math.sin(ang)*44, sz = pos.z + Math.cos(ang)*44;
+    var dx = pos.x - sx, dz = pos.z - sz, len = Math.sqrt(dx*dx+dz*dz) || 1;
+    car.userData = { dx:dx/len, dz:dz/len, travelled:0, hit:false };
+    car.position.set(sx, 0, sz);
+    car.rotation.y = Math.atan2(dx, dz);
+    scene.add(car);
+    toast('🚗 En bil! Bevæg dig!');
+  }
+
+  // ===== Dyr, pistol, sygehus, træ, skateboard =====
+  function legSwing(g, p){
+    var L = g.userData.legs; if (!L) return;
+    var sw = Math.sin(p)*0.4;
+    L[0].rotation.x = sw; L[3].rotation.x = sw; L[1].rotation.x = -sw; L[2].rotation.x = -sw;
+  }
+  function makePig(){
+    var g = new THREE.Group();
+    var pink = new THREE.MeshLambertMaterial({ color:0xf3a6c0 });
+    var dark = new THREE.MeshLambertMaterial({ color:0xe07ba0 });
+    var body = new THREE.Mesh(new THREE.BoxGeometry(1.0,0.6,0.62), pink); body.position.y = 0.5; g.add(body);
+    var head = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,0.5), pink); head.position.set(0,0.55,0.5); g.add(head);
+    var snout = new THREE.Mesh(new THREE.BoxGeometry(0.26,0.22,0.12), dark); snout.position.set(0,0.5,0.78); g.add(snout);
+    [-0.16,0.16].forEach(function(x){ var ear=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.16,0.08),dark); ear.position.set(x,0.82,0.45); g.add(ear); });
+    var legs = [];
+    [[0.32,0.22],[-0.32,0.22],[0.32,-0.22],[-0.32,-0.22]].forEach(function(p){
+      var lg=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.3,0.16),dark); lg.position.set(p[0],0.15,p[1]); g.add(lg); legs.push(lg); });
+    var tail=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.1,0.2),dark); tail.position.set(0,0.6,-0.4); g.add(tail);
+    g.userData = { legs:legs }; return g;
+  }
+  function makeWolf(){
+    var g = new THREE.Group();
+    var grey = new THREE.MeshLambertMaterial({ color:0x717784 });
+    var dgrey = new THREE.MeshLambertMaterial({ color:0x4b5158 });
+    var body = new THREE.Mesh(new THREE.BoxGeometry(1.3,0.62,0.66), grey); body.position.y = 0.62; g.add(body);
+    var head = new THREE.Mesh(new THREE.BoxGeometry(0.55,0.5,0.55), grey); head.position.set(0,0.7,0.62); g.add(head);
+    var snout = new THREE.Mesh(new THREE.BoxGeometry(0.24,0.22,0.3), dgrey); snout.position.set(0,0.6,0.92); g.add(snout);
+    [-0.18,0.18].forEach(function(x){ var ear=new THREE.Mesh(new THREE.ConeGeometry(0.12,0.26,4),dgrey); ear.position.set(x,1.02,0.5); g.add(ear); });
+    [-0.14,0.14].forEach(function(x){ var eye=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.08,0.05),new THREE.MeshLambertMaterial({color:0xff4030,emissive:0x551008})); eye.position.set(x,0.74,0.9); g.add(eye); });
+    var tail=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.14,0.5),dgrey); tail.position.set(0,0.72,-0.5); tail.rotation.x=0.5; g.add(tail);
+    var legs = [];
+    [[0.4,0.24],[-0.4,0.24],[0.4,-0.24],[-0.4,-0.24]].forEach(function(p){
+      var lg=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.45,0.17),dgrey); lg.position.set(p[0],0.22,p[1]); g.add(lg); legs.push(lg); });
+    g.userData = { legs:legs }; return g;
+  }
+  function spawnPigs(n){
+    for (var i=0;i<n;i++){
+      var g=makePig(); var a=Math.random()*PI*2, r=6+Math.random()*16;
+      g.position.set(Math.sin(a)*r,0,Math.cos(a)*r);
+      g.userData.tx=g.position.x; g.userData.tz=g.position.z; g.userData.spd=1.5+Math.random(); g.userData.phase=Math.random()*6;
+      scene.add(g); pigs.push(g);
+    }
+  }
+  function spawnWolf(){
+    var w=makeWolf(); var a=Math.random()*PI*2;
+    w.position.set(Math.sin(a)*30,0,Math.cos(a)*30);
+    w.userData.life=45; w.userData.phase=0;
+    scene.add(w); wolves.push(w);
+    toast('🐺 En ulv er kommet — pas på grisene!');
+  }
+  function updateAnimals(dt){
+    pigs.forEach(function(pg){
+      var dx=pg.userData.tx-pg.position.x, dz=pg.userData.tz-pg.position.z, d=Math.sqrt(dx*dx+dz*dz);
+      if (d<0.6){ var a=Math.random()*PI*2, r=Math.random()*20; pg.userData.tx=Math.sin(a)*r; pg.userData.tz=Math.cos(a)*r; }
+      else { pg.position.x+=dx/d*pg.userData.spd*dt; pg.position.z+=dz/d*pg.userData.spd*dt; pg.rotation.y=Math.atan2(dx,dz); pg.userData.phase+=dt*6; }
+      legSwing(pg, pg.userData.phase);
+    });
+    wolfTimer+=dt;
+    if (wolfTimer>26 && pigs.length>0 && wolves.length<2){ spawnWolf(); wolfTimer=0; }
+    for (var i=wolves.length-1;i>=0;i--){
+      var w=wolves[i];
+      if (pigs.length===0){ w.userData.life-=dt; if (w.userData.life<0){ scene.remove(w); wolves.splice(i,1); } continue; }
+      var best=null,bd=1e9;
+      pigs.forEach(function(pg){ var dx=pg.position.x-w.position.x,dz=pg.position.z-w.position.z,dd=dx*dx+dz*dz; if(dd<bd){bd=dd;best=pg;} });
+      var dx=best.position.x-w.position.x, dz=best.position.z-w.position.z, d=Math.sqrt(dx*dx+dz*dz);
+      if (d<0.8){ scene.remove(best); pigs.splice(pigs.indexOf(best),1); toast('🐺 En ulv spiste en gris!'); }
+      else { w.position.x+=dx/d*3.4*dt; w.position.z+=dz/d*3.4*dt; w.rotation.y=Math.atan2(dx,dz); w.userData.phase+=dt*7; legSwing(w, w.userData.phase); }
+    }
+    if (gunPickup){
+      gunPickup.rotation.y+=dt*1.6;
+      var dx=gunPickup.position.x-pos.x, dz=gunPickup.position.z-pos.z;
+      if (Math.sqrt(dx*dx+dz*dz)<2.3){ scene.remove(gunPickup); gunPickup=null; hasGun=true;
+        $('toolGun').classList.remove('hidden'); toast('🔫 Du fandt en pistol! Tryk 3 for at vælge den.'); }
+    }
+    updateMan(dt);
+  }
+
+  function makePistol(){
+    var g=new THREE.Group();
+    var barrel=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.14,0.5), new THREE.MeshLambertMaterial({color:0x33373b})); barrel.position.set(0,0.06,0.18); g.add(barrel);
+    var grip=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.28,0.14), new THREE.MeshLambertMaterial({color:0x202226})); grip.position.set(0,-0.12,-0.02); g.add(grip);
+    return g;
+  }
+  function placeGunPickup(){
+    var bx=14, bz=-8;
+    var bush=new THREE.Mesh(new THREE.SphereGeometry(1.1,10,8), new THREE.MeshLambertMaterial({color:0x4e9c5a})); bush.position.set(bx,0.8,bz); bush.scale.set(1.4,1,1.4); scene.add(bush);
+    var bush2=new THREE.Mesh(new THREE.SphereGeometry(0.85,10,8), new THREE.MeshLambertMaterial({color:0x57b365})); bush2.position.set(bx+0.9,0.6,bz+0.4); scene.add(bush2);
+    gunPickup=makePistol(); gunPickup.scale.set(1.7,1.7,1.7); gunPickup.position.set(bx-0.2,1.0,bz-1.1); scene.add(gunPickup);
+  }
+  function fireGun(){
+    // auto-aim: sigt i kameraets retning (prikken i midten) og ram det mål, der er tættest på centrum
+    var aim = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
+    var best=null, bestDot=0.2;   // mindst ~78° fra centrum tæller som "foran"
+    function consider(obj, kind){
+      var dx=obj.position.x-pos.x, dz=obj.position.z-pos.z, d=Math.sqrt(dx*dx+dz*dz);
+      if (d>30 || d<0.001) return;
+      var dot=(dx*aim.x+dz*aim.z)/d;     // kun vandret – y/højde er ligegyldig
+      if (dot>bestDot){ bestDot=dot; best={ obj:obj, kind:kind }; }
+    }
+    if (man) consider(man, 'man');
+    pigs.forEach(function(a){ consider(a, 'pig'); });
+    wolves.forEach(function(a){ consider(a, 'wolf'); });
+    if (!best){ toast('🔫 Bang! (ramte ikke noget)'); return; }
+    if (best.kind === 'man'){ hitMan(); return; }
+    var arr = (best.kind === 'wolf') ? wolves : pigs;
+    scene.remove(best.obj); arr.splice(arr.indexOf(best.obj), 1);
+    toast(best.kind === 'wolf' ? '🔫 Du ramte ulven! 🐺' : '🔫 Av — du ramte en gris! 🐷');
+    sayMan(['Din dyreplager!','Lad dyrene være i fred!','Stop med at skyde dyrene! 😡'][Math.floor(Math.random()*3)], 4);
+  }
+
+  // ----- Milepæls-våben -----
+  function makePan(){
+    var g=new THREE.Group();
+    var pan=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.34,0.08,18), new THREE.MeshLambertMaterial({color:0x2a2a2a}));
+    pan.position.set(0,-0.9,0.34); g.add(pan);
+    var handle=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.08,0.5), new THREE.MeshLambertMaterial({color:0x3a2a18}));
+    handle.position.set(0,-0.9,0.02); g.add(handle);
+    return g;
+  }
+  function makeBazooka(){
+    var g=new THREE.Group();
+    var tube=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,1.5,16), new THREE.MeshLambertMaterial({color:0x3f5a3a}));
+    tube.rotation.x=PI/2; tube.position.set(0.08,-0.9,0.35); g.add(tube);
+    var mouth=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,0.16,16), new THREE.MeshLambertMaterial({color:0x222}));
+    mouth.rotation.x=PI/2; mouth.position.set(0.08,-0.9,1.05); g.add(mouth);
+    return g;
+  }
+  function makeNuke(){
+    var g=new THREE.Group();
+    var body=new THREE.Mesh(new THREE.SphereGeometry(0.26,12,10), new THREE.MeshLambertMaterial({color:0x2a2a2a}));
+    body.scale.set(1,1.3,1); body.position.set(0,-0.95,0.18); g.add(body);
+    var fin=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.16,0.04), new THREE.MeshLambertMaterial({color:0xe8a23b}));
+    fin.position.set(0,-1.2,0.18); g.add(fin);
+    return g;
+  }
+  function screenShake(ms){
+    var c = renderer.domElement; c.classList.add('shake');
+    setTimeout(function(){ c.classList.remove('shake'); }, ms || 400);
+  }
+  function flash(color, dur){
+    var f = $('flash'); if (!f) return; f.style.background = color || '#fff';
+    f.classList.add('on'); setTimeout(function(){ f.classList.remove('on'); }, dur || 160);
+  }
+  function meleeWhack(){
+    var best=null, bd=1e9;
+    if (man){ var dm=Math.sqrt((man.position.x-pos.x)*(man.position.x-pos.x)+(man.position.z-pos.z)*(man.position.z-pos.z)); if (dm<4.5){ best={obj:man,kind:'man'}; bd=dm; } }
+    pigs.concat(wolves).forEach(function(a){ var d=Math.sqrt((a.position.x-pos.x)*(a.position.x-pos.x)+(a.position.z-pos.z)*(a.position.z-pos.z)); if (d<4.5 && d<bd){ bd=d; best={obj:a,kind:wolves.indexOf(a)>=0?'wolf':'pig'}; } });
+    screenShake(200);
+    if (!best){ toast('🍳 Svingede stegepanden! (ramte ikke noget)'); return; }
+    if (best.kind==='man'){ hitMan(); toast('🍳 PANG! En med panden til læreren!'); return; }
+    var arr=best.kind==='wolf'?wolves:pigs; scene.remove(best.obj); arr.splice(arr.indexOf(best.obj),1);
+    toast('🍳 PANG! '+(best.kind==='wolf'?'Ulv':'Gris')+' ramt!'); sayMan('Din dyreplager!',4);
+  }
+  function fireBazooka(){
+    var aim=new THREE.Vector3(-Math.sin(camYaw),0,-Math.cos(camYaw));
+    var cx=pos.x+aim.x*12, cz=pos.z+aim.z*12, killed=0;
+    [pigs,wolves].forEach(function(arr){ for(var i=arr.length-1;i>=0;i--){ var a=arr[i];
+      if (Math.sqrt((a.position.x-cx)*(a.position.x-cx)+(a.position.z-cz)*(a.position.z-cz))<9){ scene.remove(a); arr.splice(i,1); killed++; } } });
+    if (man && Math.sqrt((man.position.x-cx)*(man.position.x-cx)+(man.position.z-cz)*(man.position.z-cz))<9) hitMan();
+    var figd = 0;
+    FIGS.forEach(function(f){ if (f.placed && Math.sqrt((f.group.position.x-cx)*(f.group.position.x-cx)+(f.group.position.z-cz)*(f.group.position.z-cz))<9){ removeFigure(f); figd++; } });
+    flash('#ff8a3b',200); screenShake(500);
+    toast('🚀 BOOM! ' + (killed?killed+' dyr':'') + (killed&&figd?' og ':'') + (figd?figd+' figur(er)':'') + (killed||figd?' ramt!':''));
+    if (killed) sayMan('Din store dyreplager!!',5);
+  }
+  function dropNuke(){
+    pigs.forEach(function(a){ scene.remove(a); }); pigs.length=0;
+    wolves.forEach(function(a){ scene.remove(a); }); wolves.length=0;
+    FIGS.forEach(function(f){ if (f.placed) removeFigure(f); });   // udsletter også alle figurer
+    flash('#ffffff',750); screenShake(1300); playScare();
+    vy=20; onGround=false;
+    toast('☢️ ATOMBOMBE! Alt blev udslettet!');
+    if (man) sayMan('DU ER EN KÆMPE DYREPLAGER!!!',6);
+  }
+
+  // ----- Fjern/tag figurer op + kugle-minispil -----
+  function removeFigure(f){
+    if (!f || !f.placed) return;
+    FIGS.forEach(function(x){ if (x.stackedOn === f){ x.stackedOn = null; x.group.position.y = 0; } });
+    if (f.group.parent) scene.remove(f.group);
+    f.placed = false; f.stackedOn = null;
+    if (active === f){ if (f.mat) f.mat.emissive.setHex(0x000000); active = null; panel.classList.add('hidden'); }
+  }
+  function pickUpFigure(){
+    if (!active || !active.placed){ toast('✋ Tomme hænder — gå hen til en figur for at tage den op'); return; }
+    var f = active, key = f.key, navn = f.navn;
+    removeFigure(f);
+    if (key === 'kugle'){ heldBall = true; $('juggleBtn').classList.remove('hidden'); toast('⚽ Du tog kuglen op! Tryk "Jonglér" for at spille.'); }
+    else toast('✋ Du fjernede ' + navn + ' (kan bygges igen).');
+  }
+  function makeBird(){
+    var g = new THREE.Group();
+    var body = new THREE.Mesh(new THREE.SphereGeometry(0.32,8,6), new THREE.MeshLambertMaterial({ color:0x4a5568 }));
+    g.add(body);
+    [-1,1].forEach(function(s){ var w=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.06,0.28), new THREE.MeshLambertMaterial({color:0x2f3a48})); w.position.set(s*0.4,0.05,0); w.rotation.z=s*0.3; g.add(w); });
+    var beak=new THREE.Mesh(new THREE.ConeGeometry(0.08,0.2,6), new THREE.MeshLambertMaterial({color:0xe8a23b})); beak.rotation.x=PI/2; beak.position.set(0,0,0.34); g.add(beak);
+    return g;
+  }
+  function makeBall(){
+    var g = new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.45,20,16), new THREE.MeshLambertMaterial({ color:0xffffff })));
+    var dark = new THREE.MeshLambertMaterial({ color:0x16324f });
+    [[0,0.43,0],[0.36,0.16,0.18],[-0.28,0.14,-0.28],[0.14,-0.4,0.16],[-0.22,-0.18,0.33],[0.3,-0.2,-0.2]].forEach(function(p){
+      var s = new THREE.Mesh(new THREE.SphereGeometry(0.13,8,6), dark); s.position.set(p[0],p[1],p[2]); g.add(s);
+    });
+    return g;
+  }
+  function spawnFallingBird(){
+    var bird = makeBird(); var a = Math.random()*PI*2;
+    bird.position.set(pos.x + Math.sin(a)*8, 11, pos.z + Math.cos(a)*8);
+    bird.userData = { vy:0 }; scene.add(bird); fallingBirds.push(bird);
+  }
+  function startJuggle(){
+    juggleActive = true; juggleCount = 0; jugglePos = 0; juggleDir = 1; juggleSpeed = 0.9;
+    $('juggleBtn').classList.add('hidden'); $('juggle').classList.remove('hidden');
+    $('juggleCount').textContent = 'Jongleringer: 0';
+    $('juggleMsg').textContent = 'Tryk SPARK (eller mellemrum), når bjælken er i den grønne midte!';
+    if (!juggleBall) juggleBall = makeBall();
+    if (!juggleBall.parent) scene.add(juggleBall);
+    juggleBall.visible = true; juggleBall.scale.set(1,1,1); ballState = 'juggle'; ballBob = 0;
+  }
+  function juggleHit(){
+    if (!juggleActive) return;
+    if (jugglePos > 0.42 && jugglePos < 0.58){
+      juggleCount++; juggleSpeed = Math.min(2.4, juggleSpeed + 0.12);
+      $('juggleCount').textContent = 'Jongleringer: ' + juggleCount;
+      flash('#dcf3e4', 70);
+      if (juggleBall){ juggleBall.scale.set(1.35,1.35,1.35); }   // synligt "pop" når man rammer
+      if (juggleCount % 3 === 0){ spawnFallingBird(); $('juggleMsg').textContent = '🐦 Bolden ramte en fugl — den falder ned!'; }
+      else $('juggleMsg').textContent = '⚽ Flot! Bliv ved …';
+    } else {
+      endJuggle(true);
+    }
+  }
+  function kickBall(){
+    if (!juggleBall) return;
+    ballState = 'kicked';
+    var cfx = -Math.sin(camYaw), cfz = -Math.cos(camYaw);   // kamera-fremad (mod horisonten)
+    var rx = cfz, rz = -cfx;                                // til siden (skærm-vandret), så læreren ses
+    var sx = pos.x + rx*1.9 - cfx*0.3, sz = pos.z + rz*1.9 - cfz*0.3;   // synligt ved siden af avataren
+    if (man){ man.position.set(sx, 0, sz); man.rotation.y = Math.atan2(cfx, cfz); manKick = 1.0; }
+    juggleBall.position.set(sx + cfx*0.5, 1.0, sz + cfz*0.5);
+    ballVel = new THREE.Vector3(cfx*24, 15, cfz*24);
+  }
+  function endJuggle(failed){
+    juggleActive = false; $('juggle').classList.add('hidden'); heldBall = false;
+    if (failed){ toast('🦵 Læreren tog bolden og sparkede den ud i horisonten! (' + juggleCount + ' jongleringer)'); kickBall(); }
+    else { if (juggleBall && juggleBall.parent) scene.remove(juggleBall); juggleBall = null; ballState = ''; }
+  }
+  function checkMilestones(){
+    var n = solvedCount();
+    if (n>=3 && !hasPan){ hasPan=true; $('toolPan').classList.remove('hidden'); toast('🍳 Easter egg! Du fik en STEGEPANDE — tast 4'); }
+    if (n>=5 && !hasGun){ hasGun=true; $('toolGun').classList.remove('hidden'); toast('🔫 Easter egg! Du fik PISTOLEN — tast 3'); }
+    if (n>=8 && !hasBazooka){ hasBazooka=true; $('toolBazooka').classList.remove('hidden'); toast('🚀 Easter egg! Du fik en BAZOOKA — tast 5'); }
+    if (n>=TASKS.length && !hasNuke){ hasNuke=true; $('toolNuke').classList.remove('hidden'); toast('☢️ Easter egg! Du fik ATOMBOMBEN — tast 6'); }
+  }
+
+  // ----- Formelsamling -----
+  function renderFormelsamling(){
+    var box = $('formelBody'); if (!box) return;
+    var h = '';
+    h += '<div class="fSec">📏 Enheder og omregning</div>';
+    h += '<div class="fItem"><b>Længde</b><br>1 m = 100 cm<br>1 dm = 10 cm<br>1 cm = 10 mm</div>';
+    h += '<div class="fItem"><b>Areal</b><br>1 dm² = 100 cm²<br>1 m² = 10 000 cm²</div>';
+    h += '<div class="fItem"><b>Rumfang</b><br>1 dm³ = 1 000 cm³<br>1 m³ = 1 000 000 cm³</div>';
+    h += '<div class="fItem"><b>Liter</b><br>1 liter = 1 dm³ = 1 000 cm³</div>';
+    var u = FIGS.filter(function(f){ return f.unlocked; });
+    h += '<div class="fSec">📦 Figurer' + (u.length < FIGS.length ? ' (flere kommer)' : '') + '</div>';
+    if (!u.length) h += '<div class="fItem" style="opacity:.6">Byg figurer og løs opgaver for at låse formler op …</div>';
+    u.forEach(function(f){
+      h += '<div class="fItem"><b>' + f.navn + '</b><br><span class="o">O = ' + f.oForm + '</span> &nbsp; <span class="v">V = ' + f.vForm + '</span></div>';
+    });
+    if (u.length) h += '<div class="fItem" style="font-size:12.5px;opacity:.72;margin-top:6px">Tegnforklaring: <b>r</b> = radius, <b>h</b> = højde, <b>s</b> = sidelinje (kegle), <b>l</b> = sidehøjde (pyramide), <b>G</b> = grundflade</div>';
+    h += '<div class="fSec">📐 2D: vinkler og Pythagoras</div>';
+    h += '<div class="fItem">Vinkelsum:<br>trekant = <b>180°</b><br>firkant = <b>360°</b></div>';
+    h += '<div class="fItem">Pythagoras (retvinklet trekant): <b>a² + b² = c²</b><br>(c = hypotenusen, den længste side)</div>';
+    box.innerHTML = h;
+  }
+
+  // ----- Afsluttende quiz -----
+  var QUIZ = [
+    { q:'1 liter — hvor mange cm³?', opts:['100 cm³','1 000 cm³','1 000 000 cm³'], a:1 },
+    { q:'Rumfanget af en terning med side s er …', opts:['6·s²','s³','3·s'], a:1 },
+    { q:'Rumfanget af en cylinder er …', opts:['π·r²·h','2·π·r·h','⅓·π·r²·h'], a:0 },
+    { q:'Fordobler du ALLE mål på en figur, bliver rumfanget …', opts:['2 gange','4 gange','8 gange'], a:2 },
+    { q:'Og overfladearealet, når du fordobler alle mål?', opts:['2 gange','4 gange','8 gange'], a:1 },
+    { q:'Retvinklet trekant med kateter 3 og 4 — hypotenusen?', opts:['5','7','12'], a:0 },
+    { q:'En kegle fylder ___ af en cylinder (samme bund og højde).', opts:['½','⅓','¼'], a:1 },
+    { q:'Vinkelsummen i en trekant er …', opts:['90°','180°','360°'], a:1 }
+  ];
+  var quizIdx = 0, quizScore = 0;
+  function startQuiz(){
+    $('formelPanel').classList.add('hidden');   // luk formelsamlingen – test hukommelsen
+    quizIdx = 0; quizScore = 0;
+    $('quizModal').classList.remove('hidden');
+    renderQuiz();
+  }
+  function renderQuiz(){
+    var q = QUIZ[quizIdx];
+    $('quizQ').textContent = 'Spørgsmål ' + (quizIdx+1) + '/' + QUIZ.length + ': ' + q.q;
+    $('quizFb').textContent = ''; $('quizNext').classList.add('hidden');
+    var box = $('quizA'); box.innerHTML = '';
+    q.opts.forEach(function(opt, i){
+      var b = document.createElement('button'); b.className = 'quizBtn'; b.textContent = opt;
+      b.onclick = function(){ answerQuiz(i, b); };
+      box.appendChild(b);
+    });
+  }
+  function answerQuiz(i, btn){
+    var q = QUIZ[quizIdx];
+    var btns = $('quizA').querySelectorAll('.quizBtn');
+    for (var j=0;j<btns.length;j++) btns[j].disabled = true;
+    var fb = $('quizFb');
+    if (i === q.a){ btn.classList.add('right'); quizScore++; fb.style.color = '#2a8a52'; fb.textContent = '✓ Rigtigt!'; }
+    else { btn.classList.add('wrong'); btns[q.a].classList.add('right'); fb.style.color = '#c0392b'; fb.textContent = '✗ Det rigtige var: ' + q.opts[q.a]; }
+    var nx = $('quizNext'); nx.classList.remove('hidden');
+    nx.textContent = (quizIdx < QUIZ.length-1) ? 'Næste ▶' : 'Se resultat 🎓';
+  }
+  function nextQuiz(){
+    if (quizIdx < QUIZ.length-1){ quizIdx++; renderQuiz(); }
+    else {
+      $('quizQ').textContent = 'Færdig! 🎓'; $('quizA').innerHTML = '';
+      var pct = Math.round(quizScore/QUIZ.length*100);
+      var msg = pct>=80 ? 'Flot — du kan dine formler!' : (pct>=50 ? 'Godt — repetér de svære i formelsamlingen.' : 'Kig i formelsamlingen og prøv igen.');
+      var fb = $('quizFb'); fb.style.color = '#16324f';
+      fb.innerHTML = 'Du fik <b>' + quizScore + ' / ' + QUIZ.length + '</b> rigtige (' + pct + '%).<br>' + msg;
+      $('quizNext').classList.add('hidden');
+    }
+  }
+
+  // ----- Gem / hent / nulstil fremgang -----
+  var SAVE_KEY = 'rumgeo_save_v1', saveEnabled = false;
+  function saveGame(){
+    if (!saveEnabled) return;   // gem ikke under opstart (ville overskrive en hentet save)
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        solved: solved, unlocked: unlocked, klodser: klodser,
+        hasGun: hasGun, hasPan: hasPan, hasBazooka: hasBazooka, hasNuke: hasNuke,
+        hasSkateboard: hasSkateboard, compositesUnlocked: compositesUnlocked, lastSolved: lastSolved
+      }));
+    } catch (e) {}
+  }
+  function loadGame(){
+    var raw; try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { return false; }
+    if (!raw) return false;
+    var s; try { s = JSON.parse(raw); } catch (e) { return false; }
+    solved = s.solved || {};
+    unlocked = s.unlocked || { terning:true };
+    FIGS.forEach(function(f){ f.unlocked = !!unlocked[f.key]; });
+    klodser = s.klodser || 0;
+    hasGun = !!s.hasGun; hasPan = !!s.hasPan; hasBazooka = !!s.hasBazooka; hasNuke = !!s.hasNuke;
+    compositesUnlocked = !!s.compositesUnlocked; lastSolved = s.lastSolved || null;
+    if (hasGun) $('toolGun').classList.remove('hidden');
+    if (hasPan) $('toolPan').classList.remove('hidden');
+    if (hasBazooka) $('toolBazooka').classList.remove('hidden');
+    if (hasNuke) $('toolNuke').classList.remove('hidden');
+    if (compositesUnlocked) $('quizBtn').classList.remove('hidden');
+    if (s.hasSkateboard){ hasSkateboard = true; moveSpeed = 10; if (!skateModel){ skateModel = makeSkateboard(); avatar.add(skateModel); } skateModel.visible = true; }
+    updateTasksBtn(); renderTaskList(); refreshBuildChoices(); renderFormelsamling(); updateKlodser();
+    return true;
+  }
+  function resetGame(){
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+    location.reload();
+  }
+
+  function makeTextSign(text){
+    var cv=document.createElement('canvas'); cv.width=420; cv.height=110; var x=cv.getContext('2d');
+    roundRect(x,4,4,412,102,16); x.fillStyle='#ffffff'; x.fill(); x.lineWidth=6; x.strokeStyle='#e23b3b'; x.stroke();
+    x.fillStyle='#16324f'; x.font='bold 56px Arial'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(text,210,58);
+    var tex=new THREE.CanvasTexture(cv); tex.anisotropy = maxAniso;
+    return new THREE.Mesh(new THREE.PlaneGeometry(3.6,3.6*110/420), new THREE.MeshBasicMaterial({map:tex,transparent:true}));
+  }
+  function makeCurlyMan(){
+    var g=new THREE.Group();
+    var coat=new THREE.MeshLambertMaterial({color:0xffffff});
+    var skin=new THREE.MeshLambertMaterial({color:0xe8b890});
+    var pants=new THREE.MeshLambertMaterial({color:0x3a4a5a});
+    var hair=new THREE.MeshLambertMaterial({color:0x5a3b22});
+    var frame=new THREE.MeshLambertMaterial({color:0x16324f});
+    var glass=new THREE.MeshLambertMaterial({color:0xcfe8ff});
+    var torso=new THREE.Mesh(new THREE.BoxGeometry(0.95,1.2,0.5),coat); torso.position.y=1.6; g.add(torso);
+    var head=new THREE.Mesh(new THREE.BoxGeometry(0.72,0.72,0.72),skin); head.position.y=2.56; g.add(head);
+    [[0,3.0,0],[0.28,2.98,0.08],[-0.28,2.98,0.08],[0.22,2.95,-0.26],[-0.22,2.95,-0.26],[0.34,2.78,-0.04],[-0.34,2.78,-0.04]]
+      .forEach(function(c){ var s=new THREE.Mesh(new THREE.SphereGeometry(0.17,8,6),hair); s.position.set(c[0],c[1],c[2]); g.add(s); });
+    [-0.16,0.16].forEach(function(x){
+      var fr=new THREE.Mesh(new THREE.BoxGeometry(0.24,0.24,0.05),frame); fr.position.set(x,2.58,0.36); g.add(fr);
+      var le=new THREE.Mesh(new THREE.BoxGeometry(0.17,0.17,0.07),glass); le.position.set(x,2.58,0.37); g.add(le); });
+    var bridge=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.05,0.05),frame); bridge.position.set(0,2.58,0.37); g.add(bridge);
+    function limb(w,h,d,mat,px,py){ var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat); m.position.set(px,py,0); g.add(m); return m; }
+    limb(0.3,1.0,0.36,coat,-0.64,1.6); var rArm = limb(0.3,1.0,0.36,coat,0.64,1.6);
+    limb(0.4,1.0,0.45,pants,-0.24,0.5); limb(0.4,1.0,0.45,pants,0.24,0.5);
+    // skæg: overskæg + rundt om munden og ned over hagen
+    var beard = new THREE.MeshLambertMaterial({ color:0x4a2f1a });
+    var mus = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.08,0.06), beard); mus.position.set(0,2.46,0.37); g.add(mus);
+    [[-0.28,2.37],[-0.15,2.31],[0,2.28],[0.15,2.31],[0.28,2.37]].forEach(function(c){
+      var s=new THREE.Mesh(new THREE.SphereGeometry(0.1,8,6),beard); s.position.set(c[0],c[1],0.34); g.add(s); });
+    [-0.34,0.34].forEach(function(xx){
+      var s=new THREE.Mesh(new THREE.SphereGeometry(0.09,8,6),beard); s.position.set(xx,2.46,0.27); g.add(s); });
+    // "Valdemar" på kitlen
+    var ncv=document.createElement('canvas'); ncv.width=512; ncv.height=128; var nx=ncv.getContext('2d');
+    nx.fillStyle='#16324f'; nx.font='bold 80px Arial'; nx.textAlign='center'; nx.textBaseline='middle'; nx.fillText('Valdemar',256,72);
+    var nTex=new THREE.CanvasTexture(ncv); nTex.anisotropy=maxAniso;
+    var nameP=new THREE.Mesh(new THREE.PlaneGeometry(0.8,0.2),
+      new THREE.MeshBasicMaterial({ map:nTex, transparent:true }));
+    nameP.position.set(0,1.62,0.26); g.add(nameP);
+    g.userData = { rArm:rArm };
+    return g;
+  }
+  function buildHospital(){
+    var hx=0, hz=-34, g=new THREE.Group(); g.position.set(hx,0,hz);
+    var wall=new THREE.MeshLambertMaterial({color:0xf2f4f7});
+    var bld=new THREE.Mesh(new THREE.BoxGeometry(9,5.5,6), wall); bld.position.y=2.75; g.add(bld);
+    var roof=new THREE.Mesh(new THREE.BoxGeometry(9.4,0.4,6.4), new THREE.MeshLambertMaterial({color:0xc9d2da})); roof.position.y=5.6; g.add(roof);
+    var red=new THREE.MeshLambertMaterial({color:0xe23b3b});
+    var v=new THREE.Mesh(new THREE.BoxGeometry(0.7,2.2,0.2),red); v.position.set(-3,3.6,3.02); g.add(v);
+    var hbar=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.7,0.2),red); hbar.position.set(-3,3.6,3.02); g.add(hbar);
+    var door=new THREE.Mesh(new THREE.BoxGeometry(1.8,2.6,0.2), new THREE.MeshLambertMaterial({color:0x2f3b45})); door.position.set(2,1.3,3.02); g.add(door);
+    var sign=makeTextSign('SYGEHUS'); sign.position.set(0,5.05,3.05); g.add(sign);
+    scene.add(g);
+    man = makeCurlyMan(); man.position.set(2,0,hz+5); scene.add(man);
+  }
+  function buildTallTree(){
+    var g=new THREE.Group(); g.position.set(-16,0,12);
+    var trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.8,1.15,16,12), new THREE.MeshLambertMaterial({color:0x8a6240})); trunk.position.y=8; g.add(trunk);
+    for (var i=0;i<3;i++){ var leaf=new THREE.Mesh(new THREE.SphereGeometry(3.4-i*0.6,12,10), new THREE.MeshLambertMaterial({color:0x4e9c5a})); leaf.position.y=14+i*1.7; g.add(leaf); }
+    scene.add(g);
+  }
+  function makeSkateboard(){
+    var g=new THREE.Group();
+    var deck=new THREE.Mesh(new THREE.BoxGeometry(0.62,0.08,1.7), new THREE.MeshLambertMaterial({color:0xe8425a})); deck.position.y=0.2; g.add(deck);
+    var wm=new THREE.MeshLambertMaterial({color:0xf6e05a});
+    [[-0.24,0.6],[0.24,0.6],[-0.24,-0.6],[0.24,-0.6]].forEach(function(w){ var wh=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,0.1,12),wm); wh.rotation.z=PI/2; wh.position.set(w[0],0.1,w[1]); g.add(wh); });
+    return g;
+  }
+  function giveSkateboard(){
+    if (hasSkateboard) return;
+    hasSkateboard=true; moveSpeed=10;
+    if (!skateModel){ skateModel=makeSkateboard(); avatar.add(skateModel); }
+    skateModel.visible=true;
+    toast('🛹 Du fik et skateboard — du er hurtigere nu!');
+  }
+
+  // ----- Matematik-manden -----
+  var MATH_LINES = ['Lav matematik!','Husk din matematik!','Har du regnet i dag?',
+    'Tænk på Pythagoras!','Du skal lave dine opgaver!','Matematik er sjovt!'];
+  function makeBubble(){
+    var cv=document.createElement('canvas'); cv.width=360; cv.height=150;
+    var tex=new THREE.CanvasTexture(cv);
+    var m=new THREE.Mesh(new THREE.PlaneGeometry(3.2,3.2*150/360), new THREE.MeshBasicMaterial({map:tex,transparent:true}));
+    m.userData={ cv:cv, tex:tex }; m.visible=false; return m;
+  }
+  function sayMan(text, secs){
+    var el = $('manSpeech'); if (!el) return;
+    el.innerHTML = '👨‍🏫 <b>Læreren:</b> ' + text;
+    el.classList.add('show');
+    positionSpeech();
+    manBubbleTimer = secs || 4;
+  }
+  function positionSpeech(){
+    var el = $('manSpeech'); if (!el) return;
+    var m = $('mission');
+    if (m && !m.classList.contains('hidden')) el.style.top = (m.getBoundingClientRect().bottom + 8) + 'px';
+    else el.style.top = '70px';
+  }
+  function hitMan(){
+    if (!onGround){ jumpscare(); return; }   // skudt mens man er i luften
+    manHits++;
+    if (manHits >= 3){
+      manHits = 0; throwCount++; vy = 26; onGround = false; manLaugh = 6;
+      sayMan(throwCount === 3 ? 'Tag jer sammen, drenge!' : 'HAHAHA! Lav den forrige opgave om! 😈', 6);
+      if (lastSolved && solved[lastSolved]){
+        solved[lastSolved] = false; updateTasksBtn(); renderTaskList(); refreshBuildChoices();
+        var t = null; TASKS.forEach(function(x){ if (x.id===lastSolved) t=x; });
+        if (t) chooseTask(t);
+      }
+    } else {
+      sayMan('Du får −3 i standpunkt!', 4);
+    }
+  }
+  function drawJumpFace(x, w, h){
+    x.fillStyle = '#160a0a'; x.fillRect(0,0,w,h);
+    var cx = w/2, cy = h/2, R = Math.min(w,h) * 0.42;
+    x.fillStyle = '#e8b890'; x.beginPath(); x.ellipse(cx, cy + R*0.1, R*0.85, R*1.05, 0, 0, 7); x.fill();
+    x.fillStyle = '#4a2f1a';
+    for (var i=0;i<11;i++){ var a = Math.PI + (i/10)*Math.PI; var rx = cx + Math.cos(a)*R*0.85, ry = cy - R*0.6 + Math.sin(a)*R*0.35; x.beginPath(); x.arc(rx, ry, R*0.22, 0, 7); x.fill(); }
+    [-1,1].forEach(function(s){
+      var ex = cx + s*R*0.38, ey = cy - R*0.05;
+      x.fillStyle = '#fff'; x.beginPath(); x.arc(ex, ey, R*0.26, 0, 7); x.fill();
+      x.fillStyle = '#16324f'; x.beginPath(); x.arc(ex, ey + R*0.03, R*0.12, 0, 7); x.fill();
+      x.fillStyle = '#000'; x.beginPath(); x.arc(ex, ey + R*0.03, R*0.06, 0, 7); x.fill();
+      x.lineWidth = R*0.05; x.strokeStyle = '#16324f'; x.beginPath(); x.arc(ex, ey, R*0.3, 0, 7); x.stroke();
+    });
+    x.beginPath(); x.moveTo(cx - R*0.1, cy - R*0.05); x.lineTo(cx + R*0.1, cy - R*0.05); x.stroke();
+    x.fillStyle = '#5a1414'; x.beginPath(); x.ellipse(cx, cy + R*0.58, R*0.32, R*0.42, 0, 0, 7); x.fill();
+    x.fillStyle = '#fff'; x.fillRect(cx - R*0.28, cy + R*0.24, R*0.56, R*0.1);
+  }
+  function playScare(){
+    try{
+      var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      var ac = new AC(), t = ac.currentTime;
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(1100, t + 0.3);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.85);
+      o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.9);
+    }catch(e){}
+  }
+  function jumpscare(){
+    var jc = $('jumpscare'); if (!jc || jc.classList.contains('show')) return;
+    var cv = $('jsCanvas'); cv.width = innerWidth; cv.height = innerHeight;
+    drawJumpFace(cv.getContext('2d'), cv.width, cv.height);
+    jc.classList.add('show'); playScare();
+    setTimeout(function(){ jc.classList.remove('show'); }, 950);
+  }
+  function updateMan(dt){
+    if (!man) return;
+    if (manKick > 0){                              // sparker bolden væk
+      manKick -= dt;
+      man.rotation.x = -0.5; man.userData.rArm.rotation.x = -1.4;
+      if (manKick <= 0){ man.rotation.x = 0; }
+      return;
+    }
+    man.rotation.x = 0;
+    var dx = pos.x - man.position.x, dz = pos.z - man.position.z, d = Math.sqrt(dx*dx+dz*dz) || 1;
+    man.rotation.y = Math.atan2(dx, dz);
+    if (manLaugh > 0){
+      manLaugh -= dt; man.userData.rArm.rotation.x = -2.3;   // står stille, peger og griner
+    } else {
+      man.userData.rArm.rotation.x = 0;
+      if (d > 3.5){ man.position.x += dx/d*2.7*dt; man.position.z += dz/d*2.7*dt; manWalk += dt*6; man.position.y = Math.abs(Math.sin(manWalk))*0.08; }
+      manSay -= dt;
+      if (manSay <= 0){ manSay = 7 + Math.random()*5; sayMan(MATH_LINES[Math.floor(Math.random()*MATH_LINES.length)], 4); }
+    }
+    if (manBubbleTimer > 0){ manBubbleTimer -= dt; if (manBubbleTimer <= 0 && manLaugh <= 0){ var sp=$('manSpeech'); if (sp) sp.classList.remove('show'); } }
+    if ($('manSpeech') && $('manSpeech').classList.contains('show')) positionSpeech();
+
+    // fastlåst på en opgave i mere end 4 minutter → manden tilbyder hjælp
+    var missionOpen = activeTask && !solved[activeTask.id] && !$('mission').classList.contains('hidden');
+    if (missionOpen){
+      if (activeTask.id !== stuckTaskId){ stuckTaskId = activeTask.id; stuckTime = 0; autoHelped = false; }
+      stuckTime += dt;
+      if (stuckTime > 180 && !autoHelped){ autoHelped = true; sayMan('Du har siddet længe — lad mig forklare trin for trin!', 6); helpStep(); }
+    } else { stuckTaskId = null; stuckTime = 0; }
+  }
+
+  var STEPS = {
+    liter:['1 liter er et rummål: 1 liter = 1 dm³.','1 dm = 10 cm, så 1 dm³ = 10·10·10 cm³.','Så hvor mange cm³ er det?'],
+    tern1L:['1 liter = 1000 cm³ — skriv det ned.','Terningens rumfang er V = s³ (s·s·s).','Hvilket tal ganget tre gange giver 1000?','Tip: tænk på 10. Byg terningen med den sidelængde.'],
+    doubV:['Tag en terning med side 10 → V = 1000.','Fordobl siden til 20 → V = 20·20·20.','Sammenlign med 1000: hvor mange gange større?'],
+    doubO:['Overflade = fladernes arealer (side·side).','Fordobler du siden, bliver HVER flade 2·2 gange større.','Så hvor mange gange i alt?'],
+    terning8:['Hvor mange 10-cm terninger i bredden? (20 ÷ 10).','Det samme i højden og dybden.','Gang de tre tal sammen.'],
+    kasse6000:['Kassens rumfang: V = l·b·h.','Find tre FORSKELLIGE tal, der ganget giver 6000.','Prøv at dele 6000 op, fx 6000 = 30·20·…','Byg kassen med dine tre tal.'],
+    minO:['Samme rumfang kan have forskellig overflade.','Jo mere "terning-agtig", jo mindre overflade.','Prøv at gøre l, b og h næsten ens.'],
+    cyl2L:['2 liter = 2000 cm³.','Cylinder: V = π·r²·h.','Vælg fx r = 8, og find h, så π·r²·h ≈ 2000.'],
+    cylkegle:['Forestil dig at hælde fra keglen op i cylinderen (samme bund og højde).','Hvor mange keglefulde fylder cylinderen?','Så keglen fylder 1 ud af …?'],
+    pyr9L:['Pyramide: V = ⅓·a²·h.','Sæt a = 30 → a² = 900, så V = 300·h.','Løs 300·h = 9000 for at finde h.'],
+    kugleO:['Kuglens overflade: O = 4·π·r².','Du vil have O ≈ 5000. Isolér r: r = √(O ÷ (4π)).','Regn √(5000 ÷ 12,57) — ca. hvilket tal?'],
+    kasseDouble:['Du skal have længden l = 2·b.','Vælg en bredde b, fx 40.','Sæt så længden til det dobbelte.'],
+    raket:['Byg først en cylinder et sted.','Gå hen til cylinderen, så panelet viser den.','Byg en kegle, mens du står ved den → den lander ovenpå.'],
+    hus:['Byg først en kasse et sted.','Gå hen til kassen, så panelet viser den.','Byg en pyramide, mens du står ved den → taget lander ovenpå.'],
+    husV:['Et hus er to kendte figurer: kasse + tag.','Du kender rumfanget af hver del.','Skal man lægge dem sammen eller gange dem?'],
+    tree:['Tegn en retvinklet trekant: lodret = højden, vandret = 9 m, skrå = 15 m.','Pythagoras: a² + b² = c². Hypotenusen c = 15, den ene katete = 9.','Så højde² = 15² − 9² = 225 − 81.','Træk fra, og tag kvadratroden.'],
+    pyth1:['Pythagoras: a² + b² = c² (c er hypotenusen).','3² + 4² = 9 + 16.','Tag kvadratroden af resultatet.'],
+    pyth2:['Pythagoras: a² + b² = c².','6² + 8² = 36 + 64.','Tag kvadratroden af resultatet.'],
+    vinkel1:['Vinkelsummen i en trekant er 180°.','Træk de to kendte fra: 180 − 90 − 35.','Hvad bliver det?'],
+    vinkel2:['En firkant kan deles i to trekanter med en diagonal.','Hver trekant har vinkelsum 180°.','To trekanter giver tilsammen …?']
+  };
+  function helpStep(){
+    if (!activeTask) return;
+    var steps = STEPS[activeTask.id] || ['Læs opgaven roligt igennem. Hvilke tal og hvilken formel passer? Prøv dig frem i Byg-menuen.'];
+    var mh = $('mHint');
+    if (helpIndex >= steps.length){
+      sayMan('Det var alle mine tips — nu kan du selv! 😊', 4);
+      if (mh) mh.innerHTML = '💬 <b>Læreren:</b> Det var alle mine tips — resten klarer du selv!';
+      return;
+    }
+    var s = steps[helpIndex++];
+    if (mh){ mh.style.display = 'block'; mh.innerHTML = '💬 <b>Læreren (trin ' + helpIndex + '/' + steps.length + '):</b> ' + s; }
+    sayMan(s, 7);
+  }
+
+  // ===== Figurer (placeres når man bygger dem) =====
+  function buildFigures(){
+    FIGS.forEach(function(f){
+      f.base = Object.assign({}, f.dims);
+      f.unlocked = !!unlocked[f.key];
+      f.placed = false;
+      f.stackedOn = null;
+      f.range = {};
+      DIMMETA[f.key].forEach(function(d){
+        f.range[d.k] = (d.k === 'r') ? [5, 90] : [5, 160];
+      });
+      f.group = new THREE.Group();
+      var tile = new THREE.Mesh(new THREE.CircleGeometry(1.9,32),
+        new THREE.MeshLambertMaterial({ color:COL.tile }));
+      tile.rotation.x = -PI/2; tile.position.y = 0.02; f.group.add(tile);
+      f.shape = new THREE.Group(); f.group.add(f.shape);
+      f.signCv = document.createElement('canvas'); f.signCv.width = 1200; f.signCv.height = 820;
+      f.signTex = new THREE.CanvasTexture(f.signCv);
+      f.signTex.anisotropy = maxAniso;   // skarp tekst på afstand/skråt
+      f.sign = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 5.2*820/1200),
+        new THREE.MeshBasicMaterial({ map:f.signTex, transparent:true }));
+      f.group.add(f.sign);
+      // f.group tilføjes først til scenen, når figuren bygges (placeFigure)
+    });
+  }
+  function placeFigure(f, target){
+    var firstTime = !f.group.parent;
+    if (firstTime) scene.add(f.group);
+    if (target && target !== f){
+      // snap oven på målfiguren (centreret, base mod toppen)
+      f.group.position.set(target.group.position.x, target.group.position.y + (target.topY || 0), target.group.position.z);
+      f.stackedOn = target;
+    } else if (firstTime){
+      var px = pos.x + Math.sin(facing)*4, pz = pos.z + Math.cos(facing)*4;
+      var rr = Math.sqrt(px*px + pz*pz); if (rr > PLAZA-1){ px *= (PLAZA-1)/rr; pz *= (PLAZA-1)/rr; }
+      f.group.position.set(px, 0, pz);
+      f.stackedOn = null;
+    }
+    // ellers: figuren er allerede placeret uden nyt mål → behold position
+    f.placed = true;
+    rebuildFigure(f);
+  }
+
+  function geometryFor(f){
+    var d = f.dims, geo;
+    switch (f.key){
+      case 'terning':  geo = new THREE.BoxGeometry(d.s*WS, d.s*WS, d.s*WS); break;
+      case 'kasse':    geo = new THREE.BoxGeometry(d.l*WS, d.h*WS, d.b*WS); break;
+      case 'cylinder': geo = new THREE.CylinderGeometry(d.r*WS, d.r*WS, d.h*WS, 48); break;
+      case 'kegle':    geo = new THREE.ConeGeometry(d.r*WS, d.h*WS, 48); break;
+      case 'pyramide': geo = new THREE.ConeGeometry(d.a/Math.SQRT2*WS, d.h*WS, 4); break;
+      case 'kugle':    geo = new THREE.SphereGeometry(d.r*WS, 40, 28); break;
+      case 'prisme':
+        var aw = d.a*WS, bw = d.b*WS, Lw = d.L*WS;
+        var sh = new THREE.Shape(); sh.moveTo(0,0); sh.lineTo(aw,0); sh.lineTo(0,bw); sh.closePath();
+        geo = new THREE.ExtrudeGeometry(sh, { depth:Lw, bevelEnabled:false });
+        geo.translate(-aw/2, 0, -Lw/2);
+        break;
+    }
+    return geo;
+  }
+
+  function rebuildFigure(f){
+    while (f.shape.children.length){
+      var c = f.shape.children.pop();
+      if (c.geometry) c.geometry.dispose();
+      f.shape.remove(c);
+    }
+    var geo = geometryFor(f);
+    geo.computeBoundingBox();
+    var bb = geo.boundingBox, sz = new THREE.Vector3(); bb.getSize(sz);
+
+    f.mat = new THREE.MeshLambertMaterial({ color:COL.fig, emissive:0x000000 });
+    var mesh = new THREE.Mesh(geo, f.mat);
+    mesh.position.y = -bb.min.y;
+    if (f.key === 'pyramide') mesh.rotation.y = PI/4;
+    f.shape.add(mesh);
+
+    if (f.key !== 'kugle'){
+      var edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 18),
+        new THREE.LineBasicMaterial({ color:COL.ink }));
+      edges.position.y = -bb.min.y; edges.rotation.copy(mesh.rotation);
+      f.shape.add(edges);
+    }
+    f.radius = Math.max(sz.x, sz.z) / 2;
+    f.topY = sz.y;
+    f.sign.position.set(0, sz.y + 2.3, 0);
+    renderSign(f);
+  }
+
+  // ===== Beregninger =====
+  function calc(f){
+    var d = f.dims, O, V, oExpr, vExpr;
+    switch (f.key){
+      case 'terning':
+        O = 6*d.s*d.s; V = d.s*d.s*d.s;
+        oExpr = '6·'+d.s+'²'; vExpr = d.s+'³'; break;
+      case 'kasse':
+        O = 2*(d.l*d.b + d.l*d.h + d.b*d.h); V = d.l*d.b*d.h;
+        oExpr = '2·('+d.l+'·'+d.b+'+'+d.l+'·'+d.h+'+'+d.b+'·'+d.h+')';
+        vExpr = d.l+'·'+d.b+'·'+d.h; break;
+      case 'cylinder':
+        O = 2*PI*d.r*d.r + 2*PI*d.r*d.h; V = PI*d.r*d.r*d.h;
+        oExpr = '2·π·'+d.r+'² + 2·π·'+d.r+'·'+d.h; vExpr = 'π·'+d.r+'²·'+d.h; break;
+      case 'kegle':
+        var sl = Math.sqrt(d.r*d.r + d.h*d.h);
+        O = PI*d.r*d.r + PI*d.r*sl; V = PI*d.r*d.r*d.h/3;
+        oExpr = 'π·'+d.r+'² + π·'+d.r+'·'+g(sl)+'  (s='+g(sl)+')'; vExpr = '⅓·π·'+d.r+'²·'+d.h; break;
+      case 'pyramide':
+        var sl2 = Math.sqrt((d.a/2)*(d.a/2) + d.h*d.h);
+        O = d.a*d.a + 2*d.a*sl2; V = d.a*d.a*d.h/3;
+        oExpr = d.a+'² + 2·'+d.a+'·'+g(sl2)+'  (l='+g(sl2)+')'; vExpr = '⅓·'+d.a+'²·'+d.h; break;
+      case 'kugle':
+        O = 4*PI*d.r*d.r; V = 4*PI*d.r*d.r*d.r/3;
+        oExpr = '4·π·'+d.r+'²'; vExpr = '⁴⁄₃·π·'+d.r+'³'; break;
+      case 'prisme':
+        var G = 0.5*d.a*d.b, per = d.a + d.b + Math.sqrt(d.a*d.a + d.b*d.b);
+        O = 2*G + per*d.L; V = G*d.L;
+        oExpr = '2·'+g(G)+' + '+g(per)+'·'+d.L+'  (G='+g(G)+')'; vExpr = g(G)+'·'+d.L; break;
+    }
+    return { O:O, V:V, oExpr:oExpr, vExpr:vExpr };
+  }
+
+  function fitBold(x, text, maxW, px){
+    x.font = 'bold ' + px + 'px Arial';
+    while (px > 30 && x.measureText(text).width > maxW){ px -= 3; x.font = 'bold ' + px + 'px Arial'; }
+    return px;
+  }
+  function renderSign(f){
+    var c = calc(f), x = f.signCv.getContext('2d'), W = 1200, H = 820, PX = 74, MAX = W - 2*PX;
+    x.clearRect(0,0,W,H);
+    // hvidt kort med kraftig kant
+    roundRect(x, 14,14, W-28, H-28, 46); x.fillStyle = '#ffffff'; x.fill();
+    x.lineWidth = 14; x.strokeStyle = '#16324f'; x.stroke();
+    // navne-bjælke
+    roundRect(x, 14,14, W-28, 158, {tl:46,tr:46,br:0,bl:0}); x.fillStyle = '#16324f'; x.fill();
+    x.fillStyle = '#ffffff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = 'bold 104px Arial'; x.fillText(f.navn, W/2, 95);
+    x.textAlign = 'left';
+    // OVERFLADE
+    x.fillStyle = '#0e7c7b'; x.font = 'bold 46px Arial'; x.fillText('OVERFLADE', PX, 260);
+    x.fillStyle = '#16324f'; fitBold(x, 'O = ' + f.oForm, MAX, 62); x.fillText('O = ' + f.oForm, PX, 336);
+    var oR = '= ' + g(c.O) + ' cm²';
+    fitBold(x, oR, MAX, 90); x.fillText(oR, PX, 430);
+    // RUMFANG
+    x.fillStyle = '#c4862a'; x.font = 'bold 46px Arial'; x.fillText('RUMFANG', PX, 556);
+    x.fillStyle = '#16324f'; fitBold(x, 'V = ' + f.vForm, MAX, 62); x.fillText('V = ' + f.vForm, PX, 632);
+    var vR = '= ' + g(c.V) + ' cm³';
+    fitBold(x, vR, MAX, 90); x.fillText(vR, PX, 726);
+    f.signTex.needsUpdate = true;
+  }
+  function roundRect(c,x,y,w,h,r){
+    if (typeof r === 'number') r = {tl:r,tr:r,br:r,bl:r};
+    c.beginPath(); c.moveTo(x+r.tl,y); c.lineTo(x+w-r.tr,y); c.arcTo(x+w,y,x+w,y+r.tr,r.tr);
+    c.lineTo(x+w,y+h-r.br); c.arcTo(x+w,y+h,x+w-r.br,y+h,r.br);
+    c.lineTo(x+r.bl,y+h); c.arcTo(x,y+h,x,y+h-r.bl,r.bl);
+    c.lineTo(x,y+r.tl); c.arcTo(x,y,x+r.tl,y,r.tl); c.closePath();
+  }
+  function wrapText(ctx, text, cx, y, maxW, lh){
+    var words = ('' + text).split(' '), line = '', lines = [];
+    for (var i=0;i<words.length;i++){
+      var test = line + words[i] + ' ';
+      if (ctx.measureText(test).width > maxW && line){ lines.push(line); line = words[i] + ' '; }
+      else line = test;
+    }
+    lines.push(line);
+    for (var j=0;j<lines.length;j++) ctx.fillText(lines[j].trim(), cx, y + j*lh);
+  }
+  function renderLockSign(f){
+    var x = f.signCv.getContext('2d'), W = 460, H = 300;
+    x.clearRect(0,0,W,H);
+    roundRect(x, 8,8, W-16, H-16, 22); x.fillStyle = '#eef3f5'; x.fill();
+    x.lineWidth = 6; x.strokeStyle = '#6b7c86'; x.stroke();
+    x.fillStyle = '#445a68'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.font = 'bold 38px Arial'; x.fillText('🔒 ' + f.navn, W/2, 66);
+    x.fillStyle = '#5a7180'; x.font = '23px Arial';
+    wrapText(x, f.lockHint || 'Løs opgaven for at låse op', W/2, 140, W-70, 32);
+    f.signTex.needsUpdate = true;
+  }
+
+  // ===== Panel =====
+  function openPanel(f){
+    panel.classList.remove('hidden');
+    $('panelHead').textContent = f.navn;
+    dimList.innerHTML = '';
+    DIMMETA[f.key].forEach(function(d){
+      var rg = f.range[d.k];
+      var row = document.createElement('div'); row.className = 'dim';
+      var lab = document.createElement('label');
+      lab.innerHTML = '<span>' + d.label + '</span><span class="dval">' +
+        '<input type="number" id="num_' + d.k + '" min="' + rg[0] + '" max="' + rg[1] + '" value="' + f.dims[d.k] + '"> cm</span>';
+      var inp = document.createElement('input');
+      inp.type = 'range'; inp.min = rg[0]; inp.max = rg[1]; inp.step = 1; inp.value = f.dims[d.k]; inp.id = 'sl_' + d.k;
+      inp.addEventListener('input', function(){
+        f.dims[d.k] = +inp.value;
+        document.getElementById('num_' + d.k).value = inp.value;
+        rebuildFigure(f); refreshFormulas(f);
+      });
+      row.appendChild(lab); row.appendChild(inp); dimList.appendChild(row);
+      var num = document.getElementById('num_' + d.k);
+      num.addEventListener('input', function(){
+        var v = parseInt(num.value, 10); if (isNaN(v)) return;
+        v = Math.max(rg[0], Math.min(rg[1], v));
+        f.dims[d.k] = v; document.getElementById('sl_' + d.k).value = v;
+        rebuildFigure(f); refreshFormulas(f);
+      });
+      num.addEventListener('change', function(){ num.value = f.dims[d.k]; });
+    });
+    refreshFormulas(f);
+  }
+  function syncSliders(f){
+    DIMMETA[f.key].forEach(function(d){
+      var sl = document.getElementById('sl_' + d.k), nu = document.getElementById('num_' + d.k);
+      if (sl) sl.value = f.dims[d.k];
+      if (nu) nu.value = f.dims[d.k];
+    });
+  }
+  function refreshFormulas(f){
+    var c = calc(f);
+    oExprEl.textContent = c.oExpr;
+    oResEl.innerHTML = '= ' + g(c.O) + ' cm²';
+    vExprEl.textContent = c.vExpr;
+    vResEl.innerHTML = '= ' + g(c.V) + ' cm³ <small>≈ ' + liters(c.V) + ' L</small>';
+    renderSign(f);
+    var si = $('stackInfo');
+    if (si){
+      var mem = structureMembers(f);
+      if (mem.length > 1){
+        var tot = 0, names = [];
+        mem.forEach(function(x){ tot += calc(x).V; names.push(x.navn); });
+        si.style.display = 'block';
+        si.innerHTML = '🏗️ Bygning (' + names.join(' + ') + ')<br>Samlet rumfang = <b>' + liters(tot) + ' L</b> (' + g(tot) + ' cm³)';
+      } else si.style.display = 'none';
+    }
+    maybeAutoSolve();
+  }
+  function maybeAutoSolve(){
+    TASKS.forEach(function(t){
+      if (t.type !== 'build' || solved[t.id] || !taskAvailable(t) || !t.check) return;
+      if (t.check()){
+        markSolved(t);
+        toast('✓ Opgave løst!');
+        if (activeTask && activeTask.id === t.id){
+          var fb = $('mFb'); if (fb){ fb.className = 'ok'; fb.textContent = '✓ Flot! ' + t.reward; }
+        }
+      }
+    });
+  }
+
+  // ===== Værktøjsbrug =====
+  function useTool(){
+    if (useT >= 0) return;            // allerede i gang
+    useT = 0; useApplied = false;
+  }
+  function applyEffect(){
+    if (tool === 'none'){ pickUpFigure(); return; }
+    if (tool === 'gun'){ fireGun(); return; }
+    if (tool === 'pan'){ meleeWhack(); return; }
+    if (tool === 'bazooka'){ fireBazooka(); return; }
+    if (tool === 'nuke'){ dropNuke(); return; }
+    // hakke på malm = saml klodser
+    if (tool === 'pick' && targetNode && (!active || targetNodeCloser)){ mine(targetNode); return; }
+    if (!active){ if (tool === 'pump' && targetNode) toast('Pumpen virker kun på figurer 🙂'); return; }
+    var f = active, factor = (tool === 'pick') ? 0.9 : 1.1;
+    DIMMETA[f.key].forEach(function(d){
+      var v = f.dims[d.k] * factor, rg = f.range[d.k];
+      f.dims[d.k] = Math.round(Math.max(rg[0], Math.min(rg[1], v)));
+    });
+    rebuildFigure(f); syncSliders(f); refreshFormulas(f);
+    f.shape.scale.set(1.15,1.15,1.15);   // lille "pop"
+  }
+
+  function setTool(t){
+    if (t === 'gun' && !hasGun) return;
+    if (t === 'pan' && !hasPan) return;
+    if (t === 'bazooka' && !hasBazooka) return;
+    if (t === 'nuke' && !hasNuke) return;
+    if (t === tool) t = 'none';   // tryk samme tal igen = læg værktøjet væk (tomme hænder)
+    tool = t;
+    $('toolPick').classList.toggle('active', t === 'pick');
+    $('toolPump').classList.toggle('active', t === 'pump');
+    [['toolGun','gun'],['toolPan','pan'],['toolBazooka','bazooka'],['toolNuke','nuke']].forEach(function(p){
+      var el = $(p[0]); if (el) el.classList.toggle('active', t === p[1]);
+    });
+    pickModel.visible = (t === 'pick');
+    pumpModel.visible = (t === 'pump');
+    if (gunModel) gunModel.visible = (t === 'gun');
+    if (panModel) panModel.visible = (t === 'pan');
+    if (bazookaModel) bazookaModel.visible = (t === 'bazooka');
+    if (nukeModel) nukeModel.visible = (t === 'nuke');
+  }
+
+  // ===== Opgaver =====
+  function figByKey(k){ for (var i=0;i<FIGS.length;i++) if (FIGS[i].key===k) return FIGS[i]; }
+  function capF(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+  function structureRoot(f){ var r = f, guard = 0; while (r.stackedOn && guard++ < 10) r = r.stackedOn; return r; }
+  function structureMembers(f){
+    var root = structureRoot(f), mem = [];
+    FIGS.forEach(function(x){ if (x.placed && structureRoot(x) === root) mem.push(x); });
+    return mem;
+  }
+  var solved = {}, activeTask = null;
+
+  var TASKS = [
+    { id:'liter', tag:'Opvarmning', type:'think', needs:[],
+      prompt:'1 liter – hvor mange kubikcentimeter (cm³) er det?',
+      opts:['100 cm³','1 000 cm³','10 000 cm³','1 000 000 cm³'], answer:1,
+      reward:'1 L = 1 dm³ = 10·10·10 cm³ = 1 000 cm³.' },
+
+    { id:'tern1L', tag:'Byg', fig:'terning', type:'build', needs:['terning'], unlocks:'kasse',
+      prompt:'Byg en terning med rumfang præcis 1 liter.',
+      reward:'s = ∛1000 = 10 cm. Rumfanget vokser i tredje potens!',
+      hintBad:'Husk: 1 liter = 1 000 cm³. Hvilket tal ganget med sig selv tre gange giver 1 000?',
+      check:function(){ var d=figByKey('terning').dims; var V=d.s*d.s*d.s; return Math.abs(V-1000)<=40; } },
+
+    { id:'doubV', tag:'Tænk 🧠', fig:'terning', type:'think', needs:['terning'],
+      prompt:'Hvis du fordobler ALLE mål på en terning – hvor mange gange større bliver rumfanget?',
+      opts:['2 gange','4 gange','8 gange','16 gange'], answer:2,
+      reward:'2·2·2 = 2³ = 8. Tre mål fordobles, så rumfanget bliver 8 gange større.' },
+
+    { id:'doubO', tag:'Tænk 🧠', fig:'terning', type:'think', needs:['terning'],
+      prompt:'Og når du fordobler alle mål – hvor mange gange større bliver OVERFLADEAREALET?',
+      opts:['2 gange','4 gange','8 gange'], answer:1,
+      reward:'Areal afhænger af to mål: 2·2 = 2² = 4 gange.' },
+
+    { id:'terning8', tag:'Tænk 🧠', fig:'terning', type:'think', needs:['terning'],
+      prompt:'Hvor mange små terninger med side 10 cm kan der være inde i en terning med side 20 cm?',
+      opts:['2','4','8'], answer:2,
+      reward:'Der er plads til 2 i hver retning: 2·2·2 = 8 små terninger.' },
+
+    { id:'kasse6000', tag:'Byg + tænk 🧠', fig:'kasse', type:'build', needs:['kasse'], unlocks:'cylinder',
+      prompt:'Byg en kasse med rumfang 6 000 cm³ – men hvor alle tre sider er FORSKELLIGE.',
+      reward:'Fx 30·20·10 = 6 000. Der findes mange løsninger – I skal bare dele 6 000 op i tre forskellige faktorer.',
+      hintBad:'Rumfanget skal være ~6 000 cm³, OG l, b og h må ikke være ens.',
+      check:function(){ var d=figByKey('kasse').dims; var V=d.l*d.b*d.h;
+        var diff = (d.l!==d.b && d.b!==d.h && d.l!==d.h);
+        return Math.abs(V-6000)<=250 && diff; } },
+
+    { id:'minO', tag:'Optimering 🧠', fig:'kasse', type:'build', needs:['kasse'],
+      prompt:'Byg en kasse med rumfang ca. 8 000 cm³, men med MINDST muligt overfladeareal. Hvilken form bliver bedst?',
+      reward:'Terningen 20·20·20 vinder: V = 8 000 cm³ med kun O = 2 400 cm². Jo mere "terning-agtig", jo mindre materiale.',
+      hintBad:'Rumfanget skal være ~8 000 cm³. Hvad sker der med overfladen, når kassen kommer til at ligne en terning?',
+      check:function(){ var d=figByKey('kasse').dims; var V=d.l*d.b*d.h;
+        var O=2*(d.l*d.b+d.l*d.h+d.b*d.h); return V>=7400 && V<=8600 && O<=2600; } },
+
+    { id:'kasseDouble', tag:'Byg 🧠', fig:'kasse', type:'build', needs:['kasse'],
+      prompt:'Byg en kasse, der er præcis dobbelt så lang (l) som den er bred (b).',
+      reward:'Når l = 2·b passer det – fx l = 80 cm og b = 40 cm.',
+      hintBad:'Sæt længden l til præcis det dobbelte af bredden b.',
+      check:function(){ var f=figByKey('kasse'); return f.placed && Math.abs(f.dims.l - 2*f.dims.b) <= 1; } },
+
+    { id:'cyl2L', tag:'Byg', fig:'cylinder', type:'build', needs:['cylinder'], unlocks:'kegle',
+      prompt:'Byg en cylinder med rumfang så tæt på 2 liter (2 000 cm³) som muligt.',
+      reward:'V = π·r²·h. Der er mange løsninger – fx r = 8 cm og h ≈ 10 cm.',
+      hintBad:'2 liter = 2 000 cm³. Prøv dig frem med r og h – husk V = π·r²·h.',
+      check:function(){ var d=figByKey('cylinder').dims; var V=PI*d.r*d.r*d.h; return Math.abs(V-2000)<=200; } },
+
+    { id:'cylkegle', tag:'Sammenlign 🧠', type:'think', needs:['kegle'], unlocks:'pyramide',
+      prompt:'En kegle og en cylinder har samme grundflade og samme højde. Hvor stor del fylder keglen af cylinderen?',
+      opts:['Halvdelen (½)','En tredjedel (⅓)','En fjerdedel (¼)'], answer:1,
+      reward:'Keglen fylder præcis ⅓ af cylinderen, når grundflade og højde er ens. Derfor ⅓ i keglens formel.' },
+
+    { id:'raket', tag:'Sammensæt 🏗️', fig:'cylinder', type:'build', needs:['kegle'],
+      prompt:'Byg en RAKET: stil en kegle oven på en cylinder. Byg først en cylinder, gå hen til den, og byg så keglen.',
+      reward:'Raketten er sammensat: V = cylinderens + keglens rumfang = π·r²·h + ⅓·π·r²·t.',
+      hintBad:'Byg en cylinder. Gå hen til den (så panelet viser den), og byg en kegle – så snapper den ovenpå.',
+      check:function(){ var ke=figByKey('kegle'), cy=figByKey('cylinder'); return ke.placed && cy.placed && ke.stackedOn === cy; } },
+
+    { id:'pyr9L', tag:'Byg + tænk 🧠', fig:'pyramide', type:'build', needs:['pyramide'], unlocks:'kugle',
+      prompt:'Byg en pyramide med kvadratisk grundkant 30 cm og rumfang 9 000 cm³ (find højden).',
+      reward:'V = ⅓·a²·h = ⅓·30²·h = 300·h. 300·h = 9 000 ⇒ h = 30 cm.',
+      hintBad:'Sæt a = 30 cm. Brug V = ⅓·a²·h, og find den højde der giver 9 000 cm³.',
+      check:function(){ var d=figByKey('pyramide').dims; var V=d.a*d.a*d.h/3;
+        return Math.abs(d.a-30)<=1 && Math.abs(V-9000)<=400; } },
+
+    { id:'hus', tag:'Sammensæt 🏗️', fig:'pyramide', type:'build', needs:['pyramide'],
+      prompt:'Byg et HUS: stil en pyramide oven på en kasse. Byg først en kasse, gå hen til den, og byg så pyramiden.',
+      reward:'Husets rumfang = kassens + pyramidens: V = l·b·h + ⅓·G·t. Del op, regn hver del, læg sammen!',
+      hintBad:'Byg en kasse. Gå hen til den (så panelet viser den), og byg en pyramide – så snapper den ovenpå.',
+      check:function(){ var p=figByKey('pyramide'), k=figByKey('kasse'); return p.placed && k.placed && p.stackedOn === k; } },
+
+    { id:'kugleO', tag:'Byg + tænk 🧠', fig:'kugle', type:'build', needs:['kugle'], unlocks:'prisme',
+      prompt:'Byg en kugle med overfladeareal så tæt på 5 000 cm² som muligt. Hvad bliver radius cirka?',
+      reward:'O = 4·π·r² ⇒ r = √(O / (4·π)) = √(5000 / 12,57) ≈ 20 cm.',
+      hintBad:'O = 4·π·r². Prøv dig frem – eller regn baglæns: r = √(5000 / (4·π)).',
+      check:function(){ var r=figByKey('kugle').dims.r; var O=4*PI*r*r; return Math.abs(O-5000)<=250; } },
+
+    { id:'husV', tag:'Sammensat 🧠', type:'think', needs:['prisme'],
+      prompt:'Et hus er en kasse med et pyramidetag. Hvordan finder man husets samlede RUMFANG?',
+      opts:['Gang de to rumfang sammen','Læg de to rumfang sammen','Træk tagets rumfang fra kassen'], answer:1,
+      reward:'Del op, regn hver del, og læg sammen: V = V_kasse + V_tag. Prøv selv at bygge et hus (pyramide oven på kasse)!' },
+
+    { id:'tree', tag:'📐 Det høje træ', type:'think', needs:[], grantSkateboard:true,
+      prompt:'Find det høje træs højde med Pythagoras: Du står 9 m fra træets fod. Fra dine fødder til træets top er der 15 m (det er hypotenusen). Hvor højt er træet?',
+      opts:['10 m','12 m','14 m'], answer:1,
+      reward:'a² + b² = c²  ⇒  højde = √(15² − 9²) = √(225 − 81) = √144 = 12 m. Belønning: 🛹 skateboard!' },
+
+    { id:'pyth1', tag:'Bonus 📐', type:'think', needs:[],
+      prompt:'Bonus (2D): En retvinklet trekant har kateter 3 og 4. Hvor lang er hypotenusen?',
+      opts:['5','6','7'], answer:0, reward:'3² + 4² = 9 + 16 = 25, og √25 = 5.' },
+
+    { id:'pyth2', tag:'Bonus 📐', type:'think', needs:[],
+      prompt:'Bonus (2D): En retvinklet trekant har kateter 6 og 8. Hvor lang er hypotenusen?',
+      opts:['10','12','14'], answer:0, reward:'6² + 8² = 36 + 64 = 100, og √100 = 10.' },
+
+    { id:'vinkel1', tag:'Bonus 📐', type:'think', needs:[],
+      prompt:'Bonus (2D): To vinkler i en trekant er 90° og 35°. Hvor stor er den tredje vinkel?',
+      opts:['45°','55°','65°'], answer:1, reward:'Vinkelsummen er 180°: 180 − 90 − 35 = 55°.' },
+
+    { id:'vinkel2', tag:'Bonus 📐', type:'think', needs:[],
+      prompt:'Bonus (2D): Hvad er vinkelsummen i en firkant?',
+      opts:['180°','360°','540°'], answer:1, reward:'En firkant kan deles i to trekanter: 2 · 180° = 360°.' },
+  ];
+
+  function solvedCount(){ var n=0; for (var k in solved) if (solved[k]) n++; return n; }
+  function updateTasksBtn(){ $('tasksBtn').textContent = '📋 Opgaver ' + solvedCount() + '/' + TASKS.length; }
+
+  function taskAvailable(t){
+    if (!t.needs) return true;
+    for (var i=0;i<t.needs.length;i++) if (!unlocked[t.needs[i]]) return false;
+    return true;
+  }
+  function renderTaskList(){
+    var list = $('taskList'); list.innerHTML = '';
+    if (admin){
+      var bar = document.createElement('div'); bar.className = 'adminbar';
+      var b1 = document.createElement('button'); b1.textContent = '🔓 Lås alle figurer op';
+      b1.onclick = function(e){ e.stopPropagation(); unlockAll(); };
+      var b2 = document.createElement('button'); b2.textContent = '+250 🧊 klodser';
+      b2.onclick = function(e){ e.stopPropagation(); klodser += 250; updateKlodser(); };
+      bar.appendChild(b1); bar.appendChild(b2); list.appendChild(bar);
+    }
+    TASKS.forEach(function(t){
+      var avail = taskAvailable(t);
+      var el = document.createElement('div');
+      el.className = 'task' + (solved[t.id] ? ' done' : '') + (activeTask && activeTask.id === t.id ? ' cur' : '');
+      var icon = solved[t.id] ? '✅' : (avail ? '⬜' : '🔒');
+      var sub = t.tag + (t.fig ? ' · ' + (t.use || capF(t.fig)) : '') + (t.unlocks ? ' · låser ' + capF(t.unlocks) + ' op' : '');
+      el.innerHTML = '<div class="tk">' + icon + '</div>' +
+        '<div class="tt">' + t.prompt + '<small>' + sub + '</small></div>';
+      if (avail) el.onclick = function(){ chooseTask(t); };
+      else { el.style.opacity = '.5'; el.onclick = function(){ toast('🔒 Lås den nødvendige figur op først'); }; }
+      if (admin && !solved[t.id] && avail){
+        var sk = document.createElement('button'); sk.className = 'skipBtn'; sk.textContent = '⏭ Spring over';
+        sk.onclick = function(e){ e.stopPropagation(); markSolved(t); };
+        el.appendChild(sk);
+      }
+      list.appendChild(el);
+    });
+  }
+  function unlockAll(){
+    FIGS.forEach(function(f){ if (!f.unlocked) unlockFig(f.key); });
+    renderTaskList(); refreshBuildChoices();
+  }
+  function toggleAdmin(){
+    if (admin){ setAdmin(false); return; }       // slå fra uden kode
+    var cm = $('codeModal'); cm.classList.remove('hidden');
+    $('codeErr').textContent = ''; var ci = $('codeInput'); ci.value = '';
+    setTimeout(function(){ try { ci.focus(); } catch(e){} }, 30);
+  }
+  function submitCode(){
+    var ci = $('codeInput');
+    if (ci.value === ADMIN_CODE){ $('codeModal').classList.add('hidden'); setAdmin(true); }
+    else { $('codeErr').textContent = 'Forkert kode – prøv igen.'; ci.value = ''; try { ci.focus(); } catch(e){} }
+  }
+  function setAdmin(on){
+    admin = on;
+    var _ab = $('adminBtn'); if (_ab) _ab.classList.toggle('on', admin);
+    toast(admin ? '🔑 Lærer-tilstand TIL – du kan springe opgaver over' : 'Lærer-tilstand fra');
+    var p = $('tasksPanel'); if (admin && p.classList.contains('hidden')) p.classList.remove('hidden');
+    renderTaskList();
+  }
+
+  function chooseTask(t){
+    activeTask = t;
+    $('mission').classList.remove('hidden');
+    $('mTag').textContent = t.tag;
+    $('mPrompt').textContent = t.prompt;
+    $('mUse').innerHTML = (t.type === 'build')
+      ? 'Byg/justér i 🔨 Byg-menuen — opgaven tjekkes automatisk'
+      : 'Tænk – vælg det rigtige svar';
+    var fb = $('mFb'); fb.textContent = ''; fb.className = '';
+    var ans = $('mAns'); ans.innerHTML = '';
+    if (t.type === 'think'){
+      t.opts.forEach(function(opt, i){
+        var b = document.createElement('button'); b.className = 'ansBtn'; b.textContent = opt;
+        b.onclick = function(){ answerThink(t, i); };
+        ans.appendChild(b);
+      });
+    } else {
+      var c = document.createElement('button'); c.id = 'mCheck'; c.textContent = 'Tjek mit svar';
+      c.onclick = function(){ checkBuild(t); };
+      ans.appendChild(c);
+    }
+    if (solved[t.id]){ fb.className = 'ok'; fb.textContent = '✓ Løst! ' + t.reward; }
+    helpIndex = 0;
+    var mh = $('mHint'); if (mh){ mh.style.display = 'none'; mh.innerHTML = ''; }
+    var hb = $('mHelp'); if (hb) hb.onclick = helpStep;
+    renderTaskList();
+  }
+
+  function answerThink(t, i){
+    var fb = $('mFb');
+    if (i === t.answer){
+      markSolved(t); fb.className = 'ok'; fb.textContent = '✓ Rigtigt! ' + t.reward;
+      var bs = $('mAns').querySelectorAll('.ansBtn');
+      for (var j=0;j<bs.length;j++) bs[j].disabled = true;
+    } else { fb.className = 'no'; fb.textContent = 'Ikke helt – tænk over det og prøv igen. 🤔'; }
+  }
+  function checkBuild(t){
+    var fb = $('mFb');
+    if (t.check()){ markSolved(t); fb.className = 'ok'; fb.textContent = '✓ Flot! ' + t.reward; }
+    else { fb.className = 'no'; fb.textContent = 'Endnu ikke. ' + (t.hintBad || 'Prøv igen.'); }
+  }
+  function markSolved(t){
+    var was = solved[t.id]; solved[t.id] = true; updateTasksBtn();
+    if (!was) lastSolved = t.id;
+    if (!was && t.unlocks) unlockFig(t.unlocks);
+    if (!was && t.grantSkateboard) giveSkateboard();
+    if (!was) checkMilestones();
+    renderTaskList(); refreshBuildChoices();
+    saveGame();
+  }
+
+  // ===== Ressourcer, oplåsning og bygning =====
+  function toast(msg){
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 1700);
+  }
+  function updateKlodser(){
+    var el = $('klodser'); if (!el) return;
+    el.textContent = '🧊 ' + g(klodser);
+    el.classList.add('bump'); setTimeout(function(){ el.classList.remove('bump'); }, 130);
+    saveGame();
+  }
+  function mine(node){
+    klodser += KLODS_GAIN; updateKlodser();
+    node.userData.pop = 1.3;
+    toast('+' + KLODS_GAIN + ' 🧊');
+  }
+  function unlockFig(key){
+    var f = figByKey(key); if (!f || f.unlocked) return;
+    f.unlocked = true; unlocked[key] = true;   // hold begge "sandheder" i sync
+    toast('🔓 ' + f.navn + ' kan nu bygges! 📖 Ny formel i formelsamlingen.');
+    refreshBuildChoices();
+    renderFormelsamling();
+    $('tasksPanel').classList.remove('hidden'); renderTaskList();  // fold opgaverne ud
+    if (!compositesUnlocked && FIGS.every(function(x){ return x.unlocked; })){
+      compositesUnlocked = true;
+      $('trophy').classList.remove('hidden');
+      $('quizBtn').classList.remove('hidden');   // afslut med quiz
+    }
+    saveGame();
+  }
+
+  function buildNodes(){
+    var cubes = [[0,0.45,0,0.9],[0.55,0.3,0.32,0.55],[-0.42,0.25,-0.4,0.5],[0.2,0.82,-0.2,0.45]];
+    var n = 10;
+    for (var i=0;i<n;i++){
+      var a = (i/n)*PI*2 + 0.3, R = 19 + (i%2)*4;
+      var grp = new THREE.Group(); grp.position.set(Math.sin(a)*R, 0, Math.cos(a)*R);
+      var mat = new THREE.MeshLambertMaterial({ color:0x57b85f, emissive:0x123d18 });
+      cubes.forEach(function(c){
+        var m = new THREE.Mesh(new THREE.BoxGeometry(c[3],c[3],c[3]), mat);
+        m.position.set(c[0],c[1],c[2]); grp.add(m);
+        var e = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),
+          new THREE.LineBasicMaterial({ color:0x16324f }));
+        e.position.copy(m.position); grp.add(e);
+      });
+      grp.userData = { radius:1.1, pop:1 };
+      scene.add(grp); nodes.push(grp);
+    }
+  }
+
+  function makeTag(text){
+    var cv = document.createElement('canvas'); cv.width = 640; cv.height = 144;
+    var x = cv.getContext('2d');
+    roundRect(x, 8,8, 624, 128, 36); x.fillStyle = 'rgba(22,50,79,.92)'; x.fill();
+    x.fillStyle = '#fff'; x.font = 'bold 54px Arial'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText(text, 320, 76);
+    var tex = new THREE.CanvasTexture(cv); tex.anisotropy = maxAniso;
+    return new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.2*144/640),
+      new THREE.MeshBasicMaterial({ map:tex, transparent:true }));
+  }
+  function placeAndTag(grp, topY, navn, V){
+    var px = pos.x + Math.sin(facing)*3.2, pz = pos.z + Math.cos(facing)*3.2;
+    var rr = Math.sqrt(px*px + pz*pz); if (rr > PLAZA-1){ px *= (PLAZA-1)/rr; pz *= (PLAZA-1)/rr; }
+    grp.position.set(px, 0, pz);
+    var tag = makeTag(navn + ' · V = ' + liters(V) + ' L');
+    tag.position.set(0, topY + 0.6, 0); grp.add(tag);
+    grp.userData = { tag:tag };
+    scene.add(grp); built.push(grp);
+    if (built.length > 12){
+      var old = built.shift(); scene.remove(old);
+      old.traverse(function(o){ if (o.geometry) o.geometry.dispose(); });
+    }
+  }
+  function spawnBuilt(key, dims, V){
+    var grp = new THREE.Group();
+    var geo = geometryFor({ key:key, dims:dims }); geo.computeBoundingBox();
+    var bb = geo.boundingBox, sz = new THREE.Vector3(); bb.getSize(sz);
+    var col = builtColors[built.length % builtColors.length];
+    var mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color:col }));
+    mesh.position.y = -bb.min.y; if (key === 'pyramide') mesh.rotation.y = PI/4; grp.add(mesh);
+    if (key !== 'kugle'){
+      var e = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 18),
+        new THREE.LineBasicMaterial({ color:0x16324f }));
+      e.position.y = -bb.min.y; e.rotation.copy(mesh.rotation); grp.add(e);
+    }
+    placeAndTag(grp, sz.y, figByKey(key).navn, V);
+  }
+
+  // ----- Sammensatte figurer -----
+  function addPart(group, geo, color, y, rotY, edges){
+    var m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color:color }));
+    m.position.y = y; if (rotY) m.rotation.y = rotY; group.add(m);
+    if (edges){
+      var e = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 18),
+        new THREE.LineBasicMaterial({ color:0x16324f }));
+      e.position.y = y; if (rotY) e.rotation.y = rotY; group.add(e);
+    }
+  }
+  var COMPOSITES = [
+    { key:'silo', navn:'Silo', col:[0xb78fe0, 0x6fc06b],
+      base:{ r:30, h:60 },
+      dimMeta:[{k:'r',label:'Radius r'},{k:'h',label:'Cylinderhøjde h'}],
+      volume:function(d){ return PI*d.r*d.r*d.h + (2/3)*PI*d.r*d.r*d.r; },
+      breakdown:function(d){ return g(PI*d.r*d.r*d.h)+' (cylinder) + '+g((2/3)*PI*d.r*d.r*d.r)+' (halvkugle) cm³'; },
+      group:function(d,c1,c2){ var grp = new THREE.Group();
+        addPart(grp, new THREE.CylinderGeometry(d.r*WS, d.r*WS, d.h*WS, 40), c1, d.h*WS/2, 0, true);
+        addPart(grp, new THREE.SphereGeometry(d.r*WS, 32, 16, 0, PI*2, 0, PI/2), c2, d.h*WS, 0, false);
+        grp.userData = { topY:(d.h + d.r)*WS }; return grp; } },
+  ];
+  COMPOSITES.forEach(function(c){ c.range = {};
+    c.dimMeta.forEach(function(d){ c.range[d.k] = (d.k === 'r') ? [5,90] : [5,160]; }); });
+  function compByKey(key){ for (var i=0;i<COMPOSITES.length;i++) if (COMPOSITES[i].key===key) return COMPOSITES[i]; }
+  function spawnComposite(c, dims, V){ var grp = c.group(dims, c.col[0], c.col[1]); placeAndTag(grp, grp.userData.topY, c.navn, V); }
+
+  function isBuildKeyValid(key){
+    if (unlocked[key]) return true;
+    if (compositesUnlocked && compByKey(key)) return true;
+    return false;
+  }
+  function buildableByKey(key){
+    var f = figByKey(key);
+    if (f) return { navn:f.navn, dimMeta:DIMMETA[f.key], range:f.range, base:f.base, breakdown:null,
+      volume:function(d){ return calc({ key:f.key, dims:d }).V; },
+      spawn:function(d,V){ spawnBuilt(f.key, d, V); } };
+    var c = compByKey(key);
+    if (c) return { navn:c.navn, dimMeta:c.dimMeta, range:c.range, base:c.base, breakdown:c.breakdown,
+      volume:c.volume, spawn:function(d,V){ spawnComposite(c, d, V); } };
+    return null;
+  }
+
+  function resetBuildDims(){ var b = buildableByKey(buildKey); if (b) buildDims = Object.assign({}, b.base); }
+  function updateBuildCost(){
+    var b = buildableByKey(buildKey); if (!b) return;
+    var V = b.volume(buildDims), cost = Math.max(1, Math.ceil(V/1000));
+    var extra = b.breakdown ? ('<br><span style="opacity:.72">Opdelt: ' + b.breakdown(buildDims) + '</span>') : '';
+    if (!b.breakdown){ var cc = calc({ key:buildKey, dims:buildDims });
+      extra = '<br><span style="opacity:.72">Overflade: ' + g(cc.O) + ' cm²</span>'; }
+    $('buildCost').innerHTML = 'Rumfang: <b>' + liters(V) + ' L</b> (' + g(V) + ' cm³)' + extra +
+      '<br>Pris: <b>' + g(cost) + ' 🧊</b> · Du har: ' + g(klodser) + ' 🧊';
+    var btn = $('doBuild');
+    if (klodser >= cost){ btn.disabled = false; btn.textContent = 'Byg ' + b.navn + ' (−' + g(cost) + ' 🧊)'; }
+    else { btn.disabled = true; btn.textContent = 'Mangler ' + g(cost - klodser) + ' 🧊 – hak mere malm'; }
+  }
+  function renderBuildDims(){
+    var box = $('buildDims'); var b = buildableByKey(buildKey); if (!box || !b) return; box.innerHTML = '';
+    if (!buildDims) resetBuildDims();
+    b.dimMeta.forEach(function(d){
+      var rg = b.range[d.k];
+      var row = document.createElement('div'); row.className = 'dim';
+      var lab = document.createElement('label');
+      lab.innerHTML = '<span>' + d.label + '</span><span class="dval">' +
+        '<input type="number" id="bnum_' + d.k + '" min="' + rg[0] + '" max="' + rg[1] + '" value="' + buildDims[d.k] + '"> cm</span>';
+      var inp = document.createElement('input');
+      inp.type = 'range'; inp.min = rg[0]; inp.max = rg[1]; inp.step = 1; inp.value = buildDims[d.k]; inp.id = 'bsl_' + d.k;
+      inp.addEventListener('input', function(){
+        buildDims[d.k] = +inp.value;
+        document.getElementById('bnum_' + d.k).value = inp.value;
+        updateBuildCost();
+      });
+      row.appendChild(lab); row.appendChild(inp); box.appendChild(row);
+      var num = document.getElementById('bnum_' + d.k);
+      num.addEventListener('input', function(){
+        var v = parseInt(num.value, 10); if (isNaN(v)) return;
+        v = Math.max(rg[0], Math.min(rg[1], v));
+        buildDims[d.k] = v; document.getElementById('bsl_' + d.k).value = v;
+        updateBuildCost();
+      });
+      num.addEventListener('change', function(){ num.value = buildDims[d.k]; });
+    });
+    updateBuildCost();
+  }
+  function refreshBuildChoices(){
+    var box = $('buildChoices'); if (!box) return;
+    var prims = FIGS.filter(function(f){ return f.unlocked; });
+    if (!isBuildKeyValid(buildKey)){ buildKey = prims.length ? prims[0].key : null; resetBuildDims(); }
+    box.innerHTML = '';
+    prims.forEach(function(f){
+      var b = document.createElement('button');
+      b.className = 'choice' + (buildKey === f.key ? ' sel' : '');
+      b.textContent = f.navn;
+      b.onclick = function(){ buildKey = f.key; resetBuildDims(); refreshBuildChoices(); };
+      box.appendChild(b);
+    });
+    if (compositesUnlocked){
+      COMPOSITES.forEach(function(c){
+        var b = document.createElement('button');
+        b.className = 'choice comp' + (buildKey === c.key ? ' sel' : '');
+        b.textContent = '🏠 ' + c.navn;
+        b.onclick = function(){ buildKey = c.key; resetBuildDims(); refreshBuildChoices(); };
+        box.appendChild(b);
+      });
+    }
+    renderBuildDims();
+  }
+  function openBuild(){
+    $('buildModal').classList.remove('hidden');
+    if (!isBuildKeyValid(buildKey)){
+      var prims = FIGS.filter(function(f){ return f.unlocked; });
+      buildKey = prims.length ? prims[0].key : null;
+    }
+    resetBuildDims(); refreshBuildChoices();
+  }
+  function doBuild(){
+    var b = buildableByKey(buildKey); if (!b) return;
+    var V = b.volume(buildDims), cost = Math.max(1, Math.ceil(V/1000));
+    if (klodser < cost) return;
+    klodser -= cost; updateKlodser();
+    heldBall = false; $('juggleBtn').classList.add('hidden');   // bygger man, holder man ikke længere bolden
+    var c = compByKey(buildKey);
+    if (c){
+      spawnComposite(c, Object.assign({}, buildDims), V);
+    } else {
+      var f = figByKey(buildKey);
+      f.dims = Object.assign({}, buildDims);
+      var target = (active && active !== f && active.placed) ? active : null;
+      placeFigure(f, target);
+      maybeAutoSolve();
+      if (active && active.placed) refreshFormulas(active);  // opdater bygnings-visning
+    }
+    toast('🔨 Du byggede en ' + b.navn + '! −' + g(cost) + ' 🧊');
+    $('buildModal').classList.add('hidden');
+  }
+
+  // ===== Input =====
+  function bindInput(){
+    addEventListener('resize', function(){
+      camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+    addEventListener('keydown', function(e){
+      var tg = e.target && e.target.tagName;
+      if (tg === 'INPUT' || tg === 'TEXTAREA' || tg === 'SELECT') return;  // skriv frit i felterne
+      keys[e.code] = true;
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].indexOf(e.code) !== -1) e.preventDefault();
+      if (e.code === 'Digit1') setTool('pick');
+      if (e.code === 'Digit2') setTool('pump');
+      if (e.code === 'Digit3') setTool('gun');
+      if (e.code === 'Digit4') setTool('pan');
+      if (e.code === 'Digit5') setTool('bazooka');
+      if (e.code === 'Digit6') setTool('nuke');
+      if (e.code === 'Space'){
+        var aeb = document.activeElement; if (aeb && aeb.tagName === 'BUTTON') aeb.blur();   // undgå at mellemrum gen-aktiverer en knap
+        if (!e.repeat){ if (juggleActive){ juggleHit(); } else if (onGround){ vy = JUMP; onGround = false; } }
+      }
+      if (e.code === 'KeyE') useTool();
+      if (e.code === 'KeyB'){ var bm = $('buildModal');
+        if (bm.classList.contains('hidden')) openBuild(); else bm.classList.add('hidden'); }
+      if (e.shiftKey && e.code === 'KeyA' && !e.repeat) toggleAdmin();
+    });
+    addEventListener('keyup', function(e){ keys[e.code] = false; });
+
+    var dom = renderer.domElement, dragging = false, moved = false, lx = 0, ly = 0, t0 = 0;
+    dom.addEventListener('pointerdown', function(e){
+      dragging = true; moved = false; lx = e.clientX; ly = e.clientY; t0 = performance.now();
+      try { dom.setPointerCapture(e.pointerId); } catch(err){}
+    });
+    dom.addEventListener('pointermove', function(e){
+      if (!dragging) return;
+      var dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY;
+      if (Math.abs(dx) + Math.abs(dy) > 4) moved = true;
+      camYaw -= dx * 0.005;
+      camPitch = Math.max(0.08, Math.min(1.15, camPitch + dy * 0.005));
+    });
+    var endDrag = function(e){
+      if (dragging && !moved && performance.now() - t0 < 300) useTool();
+      dragging = false;
+    };
+    dom.addEventListener('pointerup', endDrag);
+    dom.addEventListener('pointercancel', function(){ dragging = false; });
+
+    $('toolPick').onclick = function(){ setTool('pick'); };
+    $('toolPump').onclick = function(){ setTool('pump'); };
+    $('resetFig').onclick = function(){
+      if (!active) return;
+      active.dims = Object.assign({}, active.base);
+      rebuildFigure(active); syncSliders(active); refreshFormulas(active);
+    };
+    $('removeFig').onclick = function(){ if (active){ var nv = active.navn; removeFigure(active); toast('🗑️ ' + nv + ' fjernet — du kan bygge frit igen.'); } };
+    $('juggleBtn').onclick = startJuggle;
+    $('juggleSpark').onclick = juggleHit;
+    $('juggleQuit').onclick = function(){ endJuggle(false); };
+    bindHold('bFwd','fwd'); bindHold('bBack','back'); bindHold('bLeft','left');
+    bindHold('bRight','right'); bindHold('bTurnL','turnL'); bindHold('bTurnR','turnR');
+
+    $('go').onclick = function(){
+      $('start').classList.add('hidden');
+      $('tasksPanel').classList.remove('hidden'); renderTaskList();
+    };
+    $('restart').onclick = function(){
+      if (confirm('Vil du slette din fremgang og starte helt forfra?')) resetGame();
+    };
+
+    $('tasksBtn').onclick = function(){
+      var p = $('tasksPanel'); p.classList.toggle('hidden');
+      if (!p.classList.contains('hidden')) renderTaskList();
+    };
+    $('mClose').onclick = function(){ activeTask = null; $('mission').classList.add('hidden'); renderTaskList(); };
+    updateTasksBtn();
+
+    $('bygBtn').onclick = function(){
+      var m = $('buildModal');
+      if (m.classList.contains('hidden')) openBuild(); else m.classList.add('hidden');
+    };
+    $('buildClose').onclick = function(){ $('buildModal').classList.add('hidden'); };
+    $('doBuild').onclick = doBuild;
+    $('trophyGo').onclick = function(){ $('trophy').classList.add('hidden'); refreshBuildChoices(); };
+    $('codeOk').onclick = submitCode;
+    $('codeCancel').onclick = function(){ $('codeModal').classList.add('hidden'); };
+    $('codeInput').addEventListener('keydown', function(e){ if (e.code === 'Enter') submitCode(); e.stopPropagation(); });
+    $('formelBtn').onclick = function(){ var p=$('formelPanel'); p.classList.toggle('hidden'); if (!p.classList.contains('hidden')) renderFormelsamling(); };
+    $('formelClose').onclick = function(){ $('formelPanel').classList.add('hidden'); };
+    $('quizBtn').onclick = startQuiz;
+    $('quizClose').onclick = function(){ $('quizModal').classList.add('hidden'); };
+    $('quizNext').onclick = nextQuiz;
+    updateKlodser();
+  }
+  function bindHold(id, flag){
+    var el = $(id);
+    var on = function(e){ e.preventDefault(); moveBtn[flag] = true; };
+    var off = function(e){ e.preventDefault(); moveBtn[flag] = false; };
+    el.addEventListener('pointerdown', on);
+    el.addEventListener('pointerup', off);
+    el.addEventListener('pointerleave', off);
+    el.addEventListener('pointercancel', off);
+  }
+
+  // ===== Loop =====
+  function animate(){
+    requestAnimationFrame(animate);
+    var dt = Math.min(clock.getDelta(), 0.05);
+
+    // kamera-drej via piletaster
+    if (keys['ArrowLeft'] || moveBtn.turnL) camYaw += 1.6*dt;
+    if (keys['ArrowRight'] || moveBtn.turnR) camYaw -= 1.6*dt;
+
+    // bevægelse relativt til kameraet
+    var fwd = new THREE.Vector3(-Math.sin(camYaw), 0, -Math.cos(camYaw));
+    var right = new THREE.Vector3(Math.cos(camYaw), 0, -Math.sin(camYaw));
+    var move = new THREE.Vector3();
+    if (keys['KeyW'] || keys['ArrowUp'] || moveBtn.fwd) move.add(fwd);
+    if (keys['KeyS'] || keys['ArrowDown'] || moveBtn.back) move.sub(fwd);
+    if (keys['KeyD'] || moveBtn.right) move.add(right);
+    if (keys['KeyA'] || moveBtn.left) move.sub(right);
+
+    var moving = move.lengthSq() > 0;
+    if (knocked > 0) moving = false;   // ligger ned – kan ikke gå
+    if (moving){
+      move.normalize();
+      pos.x += move.x * moveSpeed * dt;
+      pos.z += move.z * moveSpeed * dt;
+      facing = lerpAngle(facing, Math.atan2(move.x, move.z), 0.2);
+      walkPhase += dt * 9;
+    } else {
+      walkPhase *= 0.8;
+    }
+
+    // grænser + kollision med sokler
+    var r = Math.sqrt(pos.x*pos.x + pos.z*pos.z);
+    if (r > PLAZA){ pos.x *= PLAZA/r; pos.z *= PLAZA/r; }
+    FIGS.forEach(function(f){
+      if (!f.placed) return;
+      var dx = pos.x - f.group.position.x, dz = pos.z - f.group.position.z;
+      var dd = Math.sqrt(dx*dx + dz*dz), minD = (f.radius || 1) + 1.0;
+      if (dd < minD && dd > 0.001){ pos.x = f.group.position.x + dx/dd*minD; pos.z = f.group.position.z + dz/dd*minD; }
+    });
+
+    // hop / tyngdekraft
+    pos.y += vy * dt; vy -= GRAV * dt;
+    if (pos.y <= 0){ pos.y = 0; vy = 0; onGround = true; }
+    avatar.position.set(pos.x, pos.y, pos.z);
+    avatar.rotation.y = facing;
+    avatar.rotation.z = knocked > 0 ? -1.45 : 0;   // væltet af bilen
+    if (knocked > 0) knocked = Math.max(0, knocked - dt);
+
+    // gang-animation
+    var sw = Math.sin(walkPhase) * (moving ? 0.5 : 0);
+    legL.rotation.x = sw; legR.rotation.x = -sw;
+    leftArm.rotation.x = -sw * 0.8;
+
+    // værktøjs-swing (højre arm)
+    if (useT >= 0){
+      useT += dt / 0.4;
+      rightArm.rotation.x = -Math.sin(Math.min(useT,1) * PI) * 1.7;
+      if (!useApplied && useT >= 0.5){ useApplied = true; applyEffect(); }
+      if (useT >= 1){ useT = -1; rightArm.rotation.x = 0; }
+    } else {
+      rightArm.rotation.x = sw * 0.8;
+    }
+
+    // figur "pop" tilbage til normal
+    FIGS.forEach(function(f){
+      if (f.shape.scale.x !== 1){
+        var s = f.shape.scale.x + (1 - f.shape.scale.x) * Math.min(1, dt*10);
+        if (Math.abs(s-1) < 0.005) s = 1;
+        f.shape.scale.set(s,s,s);
+      }
+    });
+
+    // ---- find mål foran spilleren ----
+    var face = new THREE.Vector3(Math.sin(facing), 0, Math.cos(facing));
+    var bestFig = null, bestFigD = 1e9;
+    FIGS.forEach(function(f){
+      if (!f.placed) return;
+      var dx = f.group.position.x - pos.x, dz = f.group.position.z - pos.z;
+      var dd = Math.sqrt(dx*dx + dz*dz), reach = (f.radius || 1) + 3.2;
+      var dot = (dx*face.x + dz*face.z) / (dd || 1);
+      if (dd < reach && dot > 0.2 && dd < bestFigD){ bestFigD = dd; bestFig = f; }
+    });
+    var bestNode = null, bestNodeD = 1e9;
+    nodes.forEach(function(nd){
+      var dx = nd.position.x - pos.x, dz = nd.position.z - pos.z;
+      var dd = Math.sqrt(dx*dx + dz*dz), reach = nd.userData.radius + 3.0;
+      var dot = (dx*face.x + dz*face.z) / (dd || 1);
+      if (dd < reach && dot > 0.15 && dd < bestNodeD){ bestNodeD = dd; bestNode = nd; }
+    });
+    targetNode = bestNode;
+    targetNodeCloser = !!(bestNode && (!bestFig || bestNodeD < bestFigD));
+
+    if (bestFig !== active){
+      if (active && active.mat) active.mat.emissive.setHex(0x000000);
+      active = bestFig;
+      if (active){ active.mat.emissive.setHex(0x16403d); openPanel(active); }
+      else panel.classList.add('hidden');
+    }
+    FIGS.forEach(function(f){ if (f.placed && f.mat) f.mat.color.setHex(f === active ? COL.figHi : COL.fig); });
+
+    var h;
+    if (targetNode && tool === 'pick' && (!active || targetNodeCloser))
+      h = '🧊 Hak malmen — saml klodser (1 klods = 1 liter)';
+    else if (active)
+      h = (tool === 'none')
+        ? '✋ Tomme hænder · tryk <b>E</b> for at tage <b>' + active.navn + '</b> op (eller 🗑️ Fjern i panelet)'
+        : '<b>' + active.navn + '</b> · hak/pump/træk i målene · byg en ny figur → stables ovenpå';
+    else
+      h = '⛏️ Mine klodser · 🔨 byg figurer · samme tal igen = læg værktøj væk (tomme hænder)';
+    if (h !== lastHint){ $('hint').innerHTML = h; lastHint = h; }
+
+    // malm-noder: roter + pop
+    nodes.forEach(function(nd){
+      nd.rotation.y += 0.4*dt;
+      if (nd.userData.pop !== 1){
+        var s = nd.userData.pop + (1 - nd.userData.pop) * Math.min(1, dt*9);
+        if (Math.abs(s-1) < 0.01) s = 1;
+        nd.userData.pop = s; nd.scale.set(s,s,s);
+      }
+    });
+    // byggede figurers navneskilte vender mod kameraet
+    built.forEach(function(b){
+      var tg = b.userData.tag;
+      if (tg) tg.rotation.y = Math.atan2(camera.position.x - b.position.x, camera.position.z - b.position.z);
+    });
+
+    // kamera (tredjeperson)
+    var target = new THREE.Vector3(pos.x, pos.y + 1.7, pos.z);
+    var hd = camDist * Math.cos(camPitch);
+    camera.position.set(
+      target.x + Math.sin(camYaw) * hd,
+      target.y + camDist * Math.sin(camPitch),
+      target.z + Math.cos(camYaw) * hd
+    );
+    if (camera.position.y < 0.6) camera.position.y = 0.6;
+    camera.lookAt(target);
+
+    // skilte vender mod kameraet
+    FIGS.forEach(function(f){
+      if (!f.placed) return;
+      f.sign.rotation.y = Math.atan2(camera.position.x - f.group.position.x, camera.position.z - f.group.position.z);
+    });
+
+    updateAnimals(dt);
+
+    // --- jonglér-bjælke + faldende fugle ---
+    if (juggleActive){
+      jugglePos += juggleDir * juggleSpeed * dt;
+      if (jugglePos >= 1){ jugglePos = 1; juggleDir = -1; }
+      else if (jugglePos <= 0){ jugglePos = 0; juggleDir = 1; }
+      var mk = $('juggleMarker'); if (mk) mk.style.left = (jugglePos*100) + '%';
+    }
+    if (juggleBall){
+      if (juggleBall.scale.x !== 1){ var bs = juggleBall.scale.x + (1 - juggleBall.scale.x)*Math.min(1,dt*8); if (Math.abs(bs-1)<0.01) bs=1; juggleBall.scale.set(bs,bs,bs); }
+      if (ballState === 'juggle' && juggleActive){
+        ballBob += dt * 5;
+        var cfx = -Math.sin(camYaw), cfz = -Math.cos(camYaw);   // − = mod kameraet, så bolden ikke skjules bag avataren
+        juggleBall.position.set(pos.x - cfx*0.6, pos.y + 2.9 + Math.abs(Math.sin(ballBob))*1.3, pos.z - cfz*0.6);
+        juggleBall.rotation.x += dt*4; juggleBall.rotation.y += dt*5;
+      } else if (ballState === 'kicked'){
+        juggleBall.position.addScaledVector(ballVel, dt);
+        ballVel.y -= GRAV * 0.55 * dt;
+        juggleBall.rotation.x += dt*12; juggleBall.rotation.z += dt*9;
+        if (juggleBall.position.y < -4 || juggleBall.position.length() > 120){ scene.remove(juggleBall); juggleBall = null; ballState = ''; }
+      }
+    }
+    for (var bi=fallingBirds.length-1; bi>=0; bi--){
+      var bd = fallingBirds[bi];
+      bd.userData.vy -= 10*dt; bd.position.y += bd.userData.vy*dt; bd.rotation.y += 3*dt;
+      if (bd.position.y <= 0.3){ scene.remove(bd); fallingBirds.splice(bi,1); }
+    }
+
+    // --- stå-stille-bil (45 s inaktivitet) ---
+    var menuOpen = !$('start').classList.contains('hidden') || !$('buildModal').classList.contains('hidden')
+      || !$('codeModal').classList.contains('hidden') || !$('trophy').classList.contains('hidden')
+      || !$('quizModal').classList.contains('hidden') || !$('formelPanel').classList.contains('hidden');
+    var acted = moving || !onGround || useT >= 0 || camYaw !== prevCamYaw || camPitch !== prevCamPitch || knocked > 0 || menuOpen || juggleActive;
+    prevCamYaw = camYaw; prevCamPitch = camPitch;
+    if (acted) idleTime = 0; else idleTime += dt;
+    if (idleTime >= 45 && !car){ spawnCar(); idleTime = 0; }
+    if (car){
+      var cs = 16;
+      car.position.x += car.userData.dx * cs * dt;
+      car.position.z += car.userData.dz * cs * dt;
+      car.userData.travelled += cs * dt;
+      var cdx = car.position.x - pos.x, cdz = car.position.z - pos.z;
+      if (!car.userData.hit && Math.sqrt(cdx*cdx + cdz*cdz) < 1.9){
+        car.userData.hit = true; knocked = 2.4;
+        toast('🚗💥 BANG! Du stod stille for længe!');
+      }
+      if (car.userData.travelled > 92){ scene.remove(car); car = null; }
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  function lerpAngle(a, b, t){
+    var d = b - a;
+    while (d > PI) d -= 2*PI;
+    while (d < -PI) d += 2*PI;
+    return a + d * t;
+  }
+
+  init();
+})();
+  </script>
+</body>
+</html>
