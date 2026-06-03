@@ -117,6 +117,10 @@
   .dbtn:active{ transform:scale(.92); background:var(--teal); }
   .dbtn.turn{ background:rgba(14,124,123,.86); font-size:21px; }
   .empty{ visibility:hidden; }
+  #gfxBtn{ bottom:18px; right:18px; font-family:var(--font); font-weight:700; font-size:13px; color:#fff;
+    background:rgba(22,50,79,.86); border:none; border-radius:13px; padding:9px 14px; cursor:pointer;
+    box-shadow:0 6px 16px rgba(22,50,79,.3); }
+  #gfxBtn:active{ transform:scale(.95); }
 
   /* Startskærm */
   #start{ inset:0; z-index:50; background:linear-gradient(160deg,#bfe3e8,#8fc9c7);
@@ -142,13 +146,18 @@
     padding:10px 13px; border-radius:14px; box-shadow:0 6px 16px rgba(22,50,79,.28);
     white-space:nowrap; transition:transform .12s; }
   #klodser.bump{ transform:scale(1.18); }
-  #bygBtn,#tasksBtn,#formelBtn,#quizBtn{ font-family:var(--font); font-weight:700; font-size:14px; color:#fff; border:none;
+  #lives{ background:rgba(176,70,58,.92); color:#fff; font-weight:700; font-size:14px;
+    padding:10px 12px; border-radius:14px; box-shadow:0 6px 16px rgba(22,50,79,.28);
+    white-space:nowrap; letter-spacing:1px; transition:transform .14s; }
+  #lives.bump{ transform:scale(1.28); }
+  #bygBtn,#tasksBtn,#formelBtn,#statsBtn,#quizBtn{ font-family:var(--font); font-weight:700; font-size:14px; color:#fff; border:none;
     border-radius:14px; padding:10px 14px; cursor:pointer; box-shadow:0 6px 16px rgba(22,50,79,.28); white-space:nowrap; }
   #bygBtn{ background:var(--amber); }
   #tasksBtn{ background:var(--teal); }
   #formelBtn{ background:#5a7bb5; }
+  #statsBtn{ background:#0e7c7b; }
   #quizBtn{ background:#b06ac0; }
-  #bygBtn:active,#tasksBtn:active,#formelBtn:active,#quizBtn:active{ transform:scale(.97); }
+  #bygBtn:active,#tasksBtn:active,#formelBtn:active,#statsBtn:active,#quizBtn:active{ transform:scale(.97); }
 
   /* Formelsamling */
   #formelPanel{ top:62px; right:14px; width:330px; max-width:calc(100vw - 28px); max-height:78vh; overflow:auto;
@@ -180,6 +189,20 @@
   #quizFb{ font-size:14px; font-weight:600; margin-top:11px; line-height:1.45; }
   #quizNext{ margin-top:12px; width:100%; font-family:var(--font); font-weight:700; font-size:16px; color:#fff;
     background:#b06ac0; border:none; border-radius:13px; padding:11px; cursor:pointer; }
+
+  /* Stats / Mine resultater */
+  #statsModal{ inset:0; z-index:72; background:rgba(16,40,60,.55); display:flex; align-items:center; justify-content:center; }
+  #statsCard{ background:#fff; border-radius:22px; padding:22px 24px; width:min(460px,calc(100vw - 32px));
+    max-height:88vh; overflow:auto; box-shadow:0 24px 60px rgba(22,50,79,.35); }
+  #statsCard .bHead{ display:flex; justify-content:space-between; align-items:center; }
+  #statsCard h2{ margin:0; font-size:22px; }
+  #statsClose{ background:none; border:none; font-size:22px; cursor:pointer; color:var(--navy); }
+  .stSec{ font-size:13px; font-weight:700; color:#0e7c7b; letter-spacing:.4px; text-transform:uppercase; margin:15px 0 2px; }
+  .stRow{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 0;
+    border-bottom:1px solid #eef3f2; font-size:15px; color:var(--navy); }
+  .stRow b{ color:#0e7c7b; font-size:18px; }
+  .stMini{ font-size:13px; color:#3a5168; line-height:1.55; margin:4px 0; }
+  .stMini b{ color:var(--navy); }
 
   /* Byg-vindue */
   #buildModal{ inset:0; z-index:40; background:rgba(16,40,60,.5); display:flex; align-items:center; justify-content:center; }
@@ -310,12 +333,42 @@
     #panel{ top:auto; bottom:120px; right:8px; width:250px; font-size:13px; }
     .tool small{ display:none; }
   }
+
+  /* Topbjælke som ét grid: titel | værktøjer (centreret) | højreklynge — kan aldrig overlappe */
+  #topBar{ position:fixed; top:0; left:0; right:0; z-index:10; user-select:none;
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:start;
+    column-gap:12px; padding:12px 14px; pointer-events:none; }
+  #topBar > *{ pointer-events:auto; min-width:0; }
+  #title{ position:static; top:auto; left:auto; justify-self:start; }
+  #tools{ position:static; top:auto; left:auto; transform:none; justify-self:center; flex-wrap:wrap; justify-content:center; }
+  #topRight{ position:static; top:auto; right:auto; justify-self:end; flex-wrap:wrap; justify-content:flex-end; }
+
+  /* Hjælp-knap (selvstændig, som grafik-knappen) */
+  #guideBtn{ bottom:60px; right:18px; font-family:var(--font); font-weight:700; font-size:14px; color:#fff;
+    background:rgba(14,124,123,.92); border:none; border-radius:13px; padding:9px 14px; cursor:pointer;
+    box-shadow:0 6px 16px rgba(22,50,79,.3); }
+  #guideBtn:active{ transform:scale(.95); }
+
+  /* Spillevejledning */
+  #guideModal{ inset:0; z-index:74; background:rgba(16,40,60,.55); display:flex; align-items:center; justify-content:center; }
+  #guideCard{ background:#fff; border-radius:22px; padding:22px 24px; width:min(500px,calc(100vw - 32px));
+    max-height:88vh; overflow:auto; box-shadow:0 24px 60px rgba(22,50,79,.35); }
+  #guideCard .bHead{ display:flex; justify-content:space-between; align-items:center; }
+  #guideCard h2{ margin:0; font-size:22px; }
+  #guideClose{ background:none; border:none; font-size:22px; cursor:pointer; color:var(--navy); }
+  .gSec{ font-weight:700; font-size:15px; color:var(--teal); margin:15px 0 5px; }
+  .gList{ margin:0; padding-left:20px; }
+  .gList li{ font-size:14.5px; line-height:1.5; margin:4px 0; }
+  #guidePlay{ margin-top:18px; width:100%; font-family:var(--font); font-weight:700; font-size:16px; color:#fff;
+    background:var(--teal); border:none; border-radius:13px; padding:12px; cursor:pointer; }
+  #guidePlay:active{ transform:scale(.98); }
 </style>
 </head>
 <body>
   <div id="app"></div>
 
   <div id="dot" class="ui"></div>
+  <div id="topBar" class="ui">
   <div id="title" class="ui">Rumgeometri<b>-verden</b><span>Hak figuren mindre · pump den større · træk i målene</span></div>
 
   <div id="tools" class="ui">
@@ -325,6 +378,17 @@
     <button class="tool pan hidden" id="toolPan">🍳 Pande<small>4 · slå</small></button>
     <button class="tool bazooka hidden" id="toolBazooka">🚀 Bazooka<small>5 · BOOM</small></button>
     <button class="tool nuke hidden" id="toolNuke">☢️ Atombombe<small>6 · ☠️</small></button>
+  </div>
+
+  <div id="topRight" class="ui">
+    <div id="lives" title="Liv">❤️❤️❤️</div>
+    <div id="klodser">🧊 0</div>
+    <button id="bygBtn">🔨 Byg</button>
+    <button id="formelBtn">📖 Formler</button>
+    <button id="statsBtn">📊 Mig</button>
+    <button id="tasksBtn">📋 Opgaver</button>
+    <button id="quizBtn" class="hidden">🎓 Quiz</button>
+  </div>
   </div>
 
   <div id="panel" class="ui hidden">
@@ -359,13 +423,8 @@
     <button class="dbtn" id="bRight">▶</button>
   </div>
 
-  <div id="topRight" class="ui">
-    <div id="klodser">🧊 0</div>
-    <button id="bygBtn">🔨 Byg</button>
-    <button id="formelBtn">📖 Formler</button>
-    <button id="tasksBtn">📋 Opgaver</button>
-    <button id="quizBtn" class="hidden">🎓 Quiz</button>
-  </div>
+  <button id="gfxBtn" class="ui" title="Skift grafik-kvalitet (skygger til/fra)">✨ Høj</button>
+  <button id="guideBtn" class="ui" title="Sådan spiller du">❓ Hjælp</button>
   <div id="formelPanel" class="ui hidden">
     <div class="fpHead"><h3>📖 Formelsamling</h3><button id="formelClose">✕</button></div>
     <p class="fpSub">Formlerne dukker op, efterhånden som du låser figurerne op.</p>
@@ -417,6 +476,47 @@
       <div id="quizA"></div>
       <div id="quizFb"></div>
       <button id="quizNext" class="hidden">Næste ▶</button>
+    </div>
+  </div>
+
+  <div id="statsModal" class="ui hidden">
+    <div id="statsCard">
+      <div class="bHead"><h2>📊 Mine resultater</h2><button id="statsClose">✕</button></div>
+      <p class="bSub">Kun dine egne tal — de gemmes lokalt på din egen maskine og deles ikke med nogen.</p>
+      <div id="statsBody"></div>
+    </div>
+  </div>
+
+  <div id="guideModal" class="ui hidden">
+    <div id="guideCard">
+      <div class="bHead"><h2>❓ Sådan spiller du</h2><button id="guideClose">✕</button></div>
+      <p class="bSub">Velkommen til Rumgeometri-verden! Her er det vigtigste på et øjeblik — du kan altid åbne den her igen med ❓ Hjælp-knappen.</p>
+
+      <div class="gSec">🎮 Sådan styrer du</div>
+      <ul class="gList">
+        <li><b>WASD</b> eller piletasterne (eller knapperne nederst i venstre hjørne) — gå rundt</li>
+        <li><b>Træk musen</b> (eller swipe på mobil) — drej kameraet</li>
+        <li><b>Mellemrum</b> — hop</li>
+        <li><b>Tal 1–6</b> — vælg et værktøj · tryk samme tal igen for at lægge det væk</li>
+      </ul>
+
+      <div class="gSec">🧊 Sådan spiller du</div>
+      <ul class="gList">
+        <li>Hak de grønne <b>malm-blokke</b> med ⛏️ → du får <b>klodser</b> (1 klods = 1 liter = 1 dm³)</li>
+        <li>Tryk <b>🔨 Byg</b> og byg en figur — prisen er figurens <b>rumfang</b> i liter</li>
+        <li>Gå hen til din figur og <b>hak</b> (mindre) / <b>pump</b> (større), eller skriv tal i felterne — skiltene viser overfladeareal (O) og rumfang (V) live</li>
+        <li>Løs opgaverne i <b>📋 Opgaver</b> → så låser du den næste figur op (terning → kasse → cylinder → …)</li>
+      </ul>
+
+      <div class="gSec">🔘 Knapperne</div>
+      <ul class="gList">
+        <li><b>📋 Opgaver</b> — dine opgaver, og <b>💬 Bed om hjælp</b> giver hints uden at afsløre svaret</li>
+        <li><b>🔨 Byg</b> — byg-menuen · <b>📖 Formler</b> — formelsamlingen · <b>📊 Mig</b> — dine egne tal</li>
+        <li><b>❤️ Liv</b> — et forkert svar koster ét liv; løs en bygge-opgave 🔨 for at få et igen</li>
+        <li><b>🎓 Quiz</b> — dukker op når du har låst alle figurer op</li>
+      </ul>
+
+      <button id="guidePlay">Sådan! Lad mig spille ▶</button>
     </div>
   </div>
 
@@ -500,6 +600,8 @@
   };
 
   var scene, camera, renderer, clock, avatar, rightArm, leftArm, legL, legR, maxAniso = 1;
+  var sunLight = null;                       // solen (kaster bløde skygger)
+  var GFX_KEY = 'rumgeo_gfx', gfxHigh = true; // grafik-kvalitet (skygger til/fra)
   var pickModel, pumpModel;
   var camYaw = 0, camPitch = 0.5, camDist = 8.5;
   var pos = new THREE.Vector3(0, 0, 0);     // avatarens fodposition
@@ -561,13 +663,24 @@
     renderer = new THREE.WebGLRenderer({ antialias:true });
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     renderer.setSize(innerWidth, innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     $('app').appendChild(renderer.domElement);
     try { maxAniso = renderer.capabilities.getMaxAnisotropy() || 1; } catch (e) { maxAniso = 1; }
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x86a9a4, 1.0));
-    var sun = new THREE.DirectionalLight(0xffffff, 0.65);
-    sun.position.set(12, 20, 9); scene.add(sun);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+    // Blødt himmel/jord-bouncelys, varm sol med bløde skygger + et koldt medlys bagfra
+    scene.add(new THREE.HemisphereLight(0xeaf6ff, 0x8fb39c, 0.82));
+    sunLight = new THREE.DirectionalLight(0xfff1d0, 1.15);
+    sunLight.position.set(28, 44, 20);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(2048, 2048);
+    var sc = sunLight.shadow.camera;
+    sc.left = -42; sc.right = 42; sc.top = 42; sc.bottom = -42; sc.near = 1; sc.far = 150;
+    sunLight.shadow.bias = -0.0004; sunLight.shadow.normalBias = 0.03;
+    scene.add(sunLight); scene.add(sunLight.target);
+    var fill = new THREE.DirectionalLight(0xc4e2ff, 0.22); fill.position.set(-26, 16, -20); scene.add(fill);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.14));
+    loadGfxPref(); applyGfx();   // sæt kvalitet (auto/gemt) FØR materialer bygges
 
     buildWorld();
     buildNodes();
@@ -577,18 +690,70 @@
     buildTallTree();
     placeGunPickup();
     spawnPigs(6);
+    shadowify(scene);            // alle statiske meshes kaster + modtager skygger
     bindInput();
     var hasSave = loadGame();
     if (hasSave){ $('go').textContent = 'Fortsæt ▶'; $('restart').classList.remove('hidden'); }
+    renderLives();        // vis liv ❤️ også ved en helt frisk start
     saveEnabled = true;   // herefter gemmes ændringer
     animate();
+  }
+
+  // ===== Grafik: skygger + kvalitets-indstilling =====
+  function shadowify(root){
+    root.traverse(function(o){ if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+  }
+  function detectQuality(){
+    try {
+      var lc = navigator.hardwareConcurrency || 4;
+      var mem = navigator.deviceMemory || 4;
+      var mobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+      if (mobile || lc <= 4 || mem <= 4) return 'low';
+    } catch (e) {}
+    return 'high';
+  }
+  function loadGfxPref(){
+    var v = null; try { v = localStorage.getItem(GFX_KEY); } catch (e) {}
+    gfxHigh = (v === 'high') ? true : (v === 'low') ? false : (detectQuality() === 'high');
+  }
+  function applyGfx(){
+    if (!renderer) return;
+    renderer.shadowMap.enabled = gfxHigh;
+    if (sunLight) sunLight.castShadow = gfxHigh;
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, gfxHigh ? 2 : 1.3));
+    if (scene) scene.traverse(function(o){
+      if (o.isMesh && o.material){ var a = Array.isArray(o.material) ? o.material : [o.material]; a.forEach(function(m){ m.needsUpdate = true; }); }
+    });
+    updateGfxBtn();
+  }
+  function toggleGfx(){
+    gfxHigh = !gfxHigh;
+    try { localStorage.setItem(GFX_KEY, gfxHigh ? 'high' : 'low'); } catch (e) {}
+    applyGfx();
+    toast(gfxHigh ? '✨ Grafik: Høj – bløde skygger til' : '⚡ Grafik: Lav – skygger fra (hurtigere)');
+  }
+  function updateGfxBtn(){ var b = $('gfxBtn'); if (b) b.textContent = gfxHigh ? '✨ Høj' : '⚡ Lav'; }
+
+  function grassTexture(){
+    var cv = document.createElement('canvas'); cv.width = cv.height = 256;
+    var x = cv.getContext('2d');
+    x.fillStyle = '#9bd0c9'; x.fillRect(0, 0, 256, 256);
+    for (var i=0;i<1500;i++){
+      var g = 150 + (Math.random()*70|0), b = 150 + (Math.random()*55|0);
+      x.fillStyle = 'rgba(' + (90+(Math.random()*60|0)) + ',' + g + ',' + b + ',' + (0.10 + Math.random()*0.13).toFixed(2) + ')';
+      var s = 2 + Math.random()*5;
+      x.fillRect(Math.random()*256, Math.random()*256, s, s);
+    }
+    var t = new THREE.CanvasTexture(cv);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(26, 26); t.anisotropy = maxAniso;
+    return t;
   }
 
   // ===== Verden =====
   function buildWorld(){
     var ground = new THREE.Mesh(new THREE.PlaneGeometry(220,220),
-      new THREE.MeshLambertMaterial({ color:COL.ground }));
-    ground.rotation.x = -PI/2; scene.add(ground);
+      new THREE.MeshLambertMaterial({ color:0xffffff, map:grassTexture() }));
+    ground.rotation.x = -PI/2; ground.receiveShadow = true; scene.add(ground);
     var grid = new THREE.GridHelper(220, 110, COL.grid, COL.grid);
     grid.position.y = 0.02; grid.material.opacity = 0.4; grid.material.transparent = true;
     scene.add(grid);
@@ -1013,10 +1178,12 @@
     { q:'En kegle fylder ___ af en cylinder (samme bund og højde).', opts:['½','⅓','¼'], a:1 },
     { q:'Vinkelsummen i en trekant er …', opts:['90°','180°','360°'], a:1 }
   ];
-  var quizIdx = 0, quizScore = 0;
+  var quizIdx = 0, quizScore = 0, quizDead = false;
+  // ----- Liv ❤️ + elev-stats (kun lokalt) -----
+  var lives = 3, bestQuiz = 0, attempts = {}, wrongs = {};
   function startQuiz(){
     $('formelPanel').classList.add('hidden');   // luk formelsamlingen – test hukommelsen
-    quizIdx = 0; quizScore = 0;
+    quizIdx = 0; quizScore = 0; quizDead = false;
     $('quizModal').classList.remove('hidden');
     renderQuiz();
   }
@@ -1037,18 +1204,31 @@
     for (var j=0;j<btns.length;j++) btns[j].disabled = true;
     var fb = $('quizFb');
     if (i === q.a){ btn.classList.add('right'); quizScore++; fb.style.color = '#2a8a52'; fb.textContent = '✓ Rigtigt!'; }
-    else { btn.classList.add('wrong'); btns[q.a].classList.add('right'); fb.style.color = '#c0392b'; fb.textContent = '✗ Det rigtige var: ' + q.opts[q.a]; }
+    else {
+      btn.classList.add('wrong'); btns[q.a].classList.add('right');
+      fb.style.color = '#c0392b'; fb.textContent = '✗ Det rigtige var: ' + q.opts[q.a];
+      loseLife();
+    }
     var nx = $('quizNext'); nx.classList.remove('hidden');
-    nx.textContent = (quizIdx < QUIZ.length-1) ? 'Næste ▶' : 'Se resultat 🎓';
+    if (noLives()){
+      quizDead = true;
+      fb.innerHTML += '<br>💔 Ingen liv tilbage – quizzen slutter her.';
+      nx.textContent = 'Se resultat 🎓';
+    } else {
+      nx.textContent = (quizIdx < QUIZ.length-1) ? 'Næste ▶' : 'Se resultat 🎓';
+    }
   }
   function nextQuiz(){
-    if (quizIdx < QUIZ.length-1){ quizIdx++; renderQuiz(); }
+    if (!quizDead && quizIdx < QUIZ.length-1){ quizIdx++; renderQuiz(); }
     else {
+      if (quizScore > bestQuiz){ bestQuiz = quizScore; }
+      saveGame();
       $('quizQ').textContent = 'Færdig! 🎓'; $('quizA').innerHTML = '';
       var pct = Math.round(quizScore/QUIZ.length*100);
       var msg = pct>=80 ? 'Flot — du kan dine formler!' : (pct>=50 ? 'Godt — repetér de svære i formelsamlingen.' : 'Kig i formelsamlingen og prøv igen.');
       var fb = $('quizFb'); fb.style.color = '#16324f';
-      fb.innerHTML = 'Du fik <b>' + quizScore + ' / ' + QUIZ.length + '</b> rigtige (' + pct + '%).<br>' + msg;
+      fb.innerHTML = 'Du fik <b>' + quizScore + ' / ' + QUIZ.length + '</b> rigtige (' + pct + '%).<br>' + msg +
+        '<br>🏆 Din bedste quiz: <b>' + bestQuiz + ' / ' + QUIZ.length + '</b>';
       $('quizNext').classList.add('hidden');
     }
   }
@@ -1061,7 +1241,8 @@
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         solved: solved, unlocked: unlocked, klodser: klodser,
         hasGun: hasGun, hasPan: hasPan, hasBazooka: hasBazooka, hasNuke: hasNuke,
-        hasSkateboard: hasSkateboard, compositesUnlocked: compositesUnlocked, lastSolved: lastSolved
+        hasSkateboard: hasSkateboard, compositesUnlocked: compositesUnlocked, lastSolved: lastSolved,
+        lives: lives, bestQuiz: bestQuiz, attempts: attempts, wrongs: wrongs
       }));
     } catch (e) {}
   }
@@ -1075,6 +1256,9 @@
     klodser = s.klodser || 0;
     hasGun = !!s.hasGun; hasPan = !!s.hasPan; hasBazooka = !!s.hasBazooka; hasNuke = !!s.hasNuke;
     compositesUnlocked = !!s.compositesUnlocked; lastSolved = s.lastSolved || null;
+    lives = (typeof s.lives === 'number') ? s.lives : 3;
+    bestQuiz = s.bestQuiz || 0; attempts = s.attempts || {}; wrongs = s.wrongs || {};
+    renderLives();
     if (hasGun) $('toolGun').classList.remove('hidden');
     if (hasPan) $('toolPan').classList.remove('hidden');
     if (hasBazooka) $('toolBazooka').classList.remove('hidden');
@@ -1087,6 +1271,77 @@
   function resetGame(){
     try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
     location.reload();
+  }
+
+  // ----- Liv ❤️ -----
+  function renderLives(){
+    var el = $('lives'); if (!el) return;
+    var h = '';
+    for (var i=0;i<3;i++) h += (i < lives) ? '❤️' : '🤍';
+    el.textContent = h;
+    el.title = 'Liv: ' + lives + '/3 – forkert svar koster et liv. Løs en bygge-opgave 🔨 for at få et liv igen.';
+    el.classList.add('bump'); setTimeout(function(){ el.classList.remove('bump'); }, 150);
+  }
+  function noLives(){ return lives <= 0; }
+  function loseLife(){
+    if (lives > 0) lives--;
+    renderLives(); saveGame();
+    toast(lives <= 0 ? '💔 Ingen liv tilbage! Løs en bygge-opgave 🔨 for at få et liv igen.'
+                     : '💔 Du mistede et liv (' + lives + '/3 tilbage)');
+  }
+  function gainLife(){
+    if (lives >= 3) return;          // maks 3 liv
+    lives++; renderLives(); saveGame();
+    toast('❤️ Du fik et liv igen! (' + lives + '/3)');
+  }
+  function bumpAttempt(id, ok){
+    attempts[id] = (attempts[id] || 0) + 1;
+    if (!ok) wrongs[id] = (wrongs[id] || 0) + 1;
+    saveGame();
+  }
+
+  // ----- Stats (kun lokalt for eleven) -----
+  function openStats(){ renderStats(); $('statsModal').classList.remove('hidden'); }
+
+  // ----- Spillevejledning -----
+  function openGuide(){ $('guideModal').classList.remove('hidden'); }
+  function closeGuide(){
+    $('guideModal').classList.add('hidden');
+    try { localStorage.setItem('rumgeo_seen_guide', '1'); } catch(e){}
+  }
+  function renderStats(){
+    var box = $('statsBody'); if (!box) return;
+    var byType = { build:[0,0], think:[0,0], input:[0,0] };
+    TASKS.forEach(function(t){ var a = byType[t.type]; if (!a) return; a[1]++; if (solved[t.id]) a[0]++; });
+    var totalAtt = 0, totalWrong = 0, k;
+    for (k in attempts) totalAtt += attempts[k];
+    for (k in wrongs) totalWrong += wrongs[k];
+    var h = '';
+    h += '<div class="stSec">🎓 Quiz</div>';
+    h += '<div class="stRow"><span>Bedste quiz-score</span><b>' + bestQuiz + ' / ' + QUIZ.length + '</b></div>';
+    h += '<div class="stSec">📋 Opgaver løst</div>';
+    h += '<div class="stRow"><span>I alt</span><b>' + solvedCount() + ' / ' + TASKS.length + '</b></div>';
+    h += '<div class="stMini">🔨 Byg: <b>' + byType.build[0] + '/' + byType.build[1] + '</b>' +
+         ' · 🧠 Tænk: <b>' + byType.think[0] + '/' + byType.think[1] + '</b>' +
+         ' · ✏️ Skriv selv: <b>' + byType.input[0] + '/' + byType.input[1] + '</b></div>';
+    h += '<div class="stSec">🎯 Forsøg & fejl</div>';
+    h += '<div class="stRow"><span>Forsøg i alt</span><b>' + totalAtt + '</b></div>';
+    h += '<div class="stRow"><span>Forkerte svar i alt</span><b>' + totalWrong + '</b></div>';
+    var hard = [];
+    TASKS.forEach(function(t){ if (wrongs[t.id]) hard.push(t); });
+    if (hard.length){
+      hard.sort(function(a,b){ return wrongs[b.id] - wrongs[a.id]; });
+      h += '<div class="stMini" style="margin-top:8px"><b>De sværeste for dig:</b></div>';
+      hard.slice(0,6).forEach(function(t){
+        h += '<div class="stMini">' + (solved[t.id] ? '✅' : '⬜') + ' ' + t.tag +
+             ' — <b>' + wrongs[t.id] + '</b> fejl på ' + (attempts[t.id] || 0) + ' forsøg</div>';
+      });
+    } else {
+      h += '<div class="stMini" style="margin-top:8px;opacity:.7">Ingen fejl registreret endnu — flot! 🌟</div>';
+    }
+    h += '<div class="stSec">❤️ Liv</div>';
+    h += '<div class="stRow"><span>Liv lige nu</span><b>' + lives + ' / 3</b></div>';
+    box.innerHTML = h;
   }
 
   function makeTextSign(text){
@@ -1261,12 +1516,12 @@
     if (manBubbleTimer > 0){ manBubbleTimer -= dt; if (manBubbleTimer <= 0 && manLaugh <= 0){ var sp=$('manSpeech'); if (sp) sp.classList.remove('show'); } }
     if ($('manSpeech') && $('manSpeech').classList.contains('show')) positionSpeech();
 
-    // fastlåst på en opgave i mere end 4 minutter → manden tilbyder hjælp
+    // fastlåst på en opgave i ca. 1½ minut → manden tilbyder hjælp (eleven kan altid selv trykke "Bed om hjælp")
     var missionOpen = activeTask && !solved[activeTask.id] && !$('mission').classList.contains('hidden');
     if (missionOpen){
       if (activeTask.id !== stuckTaskId){ stuckTaskId = activeTask.id; stuckTime = 0; autoHelped = false; }
       stuckTime += dt;
-      if (stuckTime > 180 && !autoHelped){ autoHelped = true; sayMan('Du har siddet længe — lad mig forklare trin for trin!', 6); helpStep(); }
+      if (stuckTime > 90 && !autoHelped){ autoHelped = true; sayMan('Du har siddet lidt med den her — lad mig forklare trin for trin!', 6); helpStep(); }
     } else { stuckTaskId = null; stuckTime = 0; }
   }
 
@@ -1386,6 +1641,7 @@
 
     f.mat = new THREE.MeshLambertMaterial({ color:COL.fig, emissive:0x000000 });
     var mesh = new THREE.Mesh(geo, f.mat);
+    mesh.castShadow = true; mesh.receiveShadow = true;
     mesh.position.y = -bb.min.y;
     if (f.key === 'pyramide') mesh.rotation.y = PI/4;
     f.shape.add(mesh);
@@ -1627,19 +1883,16 @@
       hintBad:'Husk: 1 liter = 1 000 cm³. Hvilket tal ganget med sig selv tre gange giver 1 000?',
       check:function(){ var d=figByKey('terning').dims; var V=d.s*d.s*d.s; return Math.abs(V-1000)<=40; } },
 
-    { id:'doubV', tag:'Tænk 🧠', fig:'terning', type:'think', needs:['terning'],
-      prompt:'Hvis du fordobler ALLE mål på en terning – hvor mange gange større bliver rumfanget?',
-      opts:['2 gange','4 gange','8 gange','16 gange'], answer:2,
+    { id:'doubV', tag:'Tænk 🧠 ✏️', fig:'terning', type:'input', needs:['terning'], solution:8, placeholder:'antal gange',
+      prompt:'Hvis du fordobler ALLE mål på en terning – hvor mange gange større bliver rumfanget? Skriv tallet.',
       reward:'2·2·2 = 2³ = 8. Tre mål fordobles, så rumfanget bliver 8 gange større.' },
 
-    { id:'doubO', tag:'Tænk 🧠', fig:'terning', type:'think', needs:['terning'],
-      prompt:'Og når du fordobler alle mål – hvor mange gange større bliver OVERFLADEAREALET?',
-      opts:['2 gange','4 gange','8 gange'], answer:1,
+    { id:'doubO', tag:'Tænk 🧠 ✏️', fig:'terning', type:'input', needs:['terning'], solution:4, placeholder:'antal gange',
+      prompt:'Og når du fordobler alle mål – hvor mange gange større bliver OVERFLADEAREALET? Skriv tallet.',
       reward:'Areal afhænger af to mål: 2·2 = 2² = 4 gange.' },
 
-    { id:'terning8', tag:'Tænk 🧠', fig:'terning', type:'think', needs:['terning'],
-      prompt:'Hvor mange små terninger med side 10 cm kan der være inde i en terning med side 20 cm?',
-      opts:['2','4','8'], answer:2,
+    { id:'terning8', tag:'Tænk 🧠 ✏️', fig:'terning', type:'input', needs:['terning'], solution:8, placeholder:'antal terninger',
+      prompt:'Hvor mange små terninger med side 10 cm kan der være inde i en terning med side 20 cm? Skriv tallet.',
       reward:'Der er plads til 2 i hver retning: 2·2·2 = 8 små terninger.' },
 
     { id:'kasse6000', tag:'Byg + tænk 🧠', fig:'kasse', type:'build', needs:['kasse'], unlocks:'cylinder',
@@ -1704,26 +1957,25 @@
       opts:['Gang de to rumfang sammen','Læg de to rumfang sammen','Træk tagets rumfang fra kassen'], answer:1,
       reward:'Del op, regn hver del, og læg sammen: V = V_kasse + V_tag. Prøv selv at bygge et hus (pyramide oven på kasse)!' },
 
-    { id:'tree', tag:'📐 Det høje træ', type:'think', needs:[], grantSkateboard:true,
-      prompt:'Find det høje træs højde med Pythagoras: Du står 9 m fra træets fod. Fra dine fødder til træets top er der 15 m (det er hypotenusen). Hvor højt er træet?',
-      opts:['10 m','12 m','14 m'], answer:1,
+    { id:'tree', tag:'📐 Det høje træ ✏️', type:'input', needs:[], grantSkateboard:true, solution:12, placeholder:'højde i m',
+      prompt:'Find det høje træs højde med Pythagoras: Du står 9 m fra træets fod. Fra dine fødder til træets top er der 15 m (det er hypotenusen). Hvor højt er træet? Skriv svaret i meter.',
       reward:'a² + b² = c²  ⇒  højde = √(15² − 9²) = √(225 − 81) = √144 = 12 m. Belønning: 🛹 skateboard!' },
 
-    { id:'pyth1', tag:'Bonus 📐', type:'think', needs:[],
-      prompt:'Bonus (2D): En retvinklet trekant har kateter 3 og 4. Hvor lang er hypotenusen?',
-      opts:['5','6','7'], answer:0, reward:'3² + 4² = 9 + 16 = 25, og √25 = 5.' },
+    { id:'pyth1', tag:'Bonus 📐 ✏️', type:'input', needs:[], solution:5, placeholder:'hypotenuse',
+      prompt:'Bonus (2D): En retvinklet trekant har kateter 3 og 4. Hvor lang er hypotenusen? Skriv tallet.',
+      reward:'3² + 4² = 9 + 16 = 25, og √25 = 5.' },
 
-    { id:'pyth2', tag:'Bonus 📐', type:'think', needs:[],
-      prompt:'Bonus (2D): En retvinklet trekant har kateter 6 og 8. Hvor lang er hypotenusen?',
-      opts:['10','12','14'], answer:0, reward:'6² + 8² = 36 + 64 = 100, og √100 = 10.' },
+    { id:'pyth2', tag:'Bonus 📐 ✏️', type:'input', needs:[], solution:10, placeholder:'hypotenuse',
+      prompt:'Bonus (2D): En retvinklet trekant har kateter 6 og 8. Hvor lang er hypotenusen? Skriv tallet.',
+      reward:'6² + 8² = 36 + 64 = 100, og √100 = 10.' },
 
-    { id:'vinkel1', tag:'Bonus 📐', type:'think', needs:[],
-      prompt:'Bonus (2D): To vinkler i en trekant er 90° og 35°. Hvor stor er den tredje vinkel?',
-      opts:['45°','55°','65°'], answer:1, reward:'Vinkelsummen er 180°: 180 − 90 − 35 = 55°.' },
+    { id:'vinkel1', tag:'Bonus 📐 ✏️', type:'input', needs:[], solution:55, placeholder:'vinkel i °',
+      prompt:'Bonus (2D): To vinkler i en trekant er 90° og 35°. Hvor stor er den tredje vinkel? Skriv antal grader.',
+      reward:'Vinkelsummen er 180°: 180 − 90 − 35 = 55°.' },
 
-    { id:'vinkel2', tag:'Bonus 📐', type:'think', needs:[],
-      prompt:'Bonus (2D): Hvad er vinkelsummen i en firkant?',
-      opts:['180°','360°','540°'], answer:1, reward:'En firkant kan deles i to trekanter: 2 · 180° = 360°.' },
+    { id:'vinkel2', tag:'Bonus 📐 ✏️', type:'input', needs:[], solution:360, placeholder:'grader',
+      prompt:'Bonus (2D): Hvad er vinkelsummen i en firkant? Skriv antal grader.',
+      reward:'En firkant kan deles i to trekanter: 2 · 180° = 360°.' },
 
     // ===== ✏️ Ligningsopgaver: opstil en ligning og løs den =====
     { id:'ligRekt', tag:'✏️ Ligning', type:'input', needs:[], solution:8, placeholder:'b i cm',
@@ -1818,14 +2070,14 @@
     $('mUse').innerHTML = (t.type === 'build')
       ? 'Byg/justér i 🔨 Byg-menuen — opgaven tjekkes automatisk'
       : (t.type === 'input')
-        ? 'Opstil ligningen på papir, regn svaret ud, og skriv det her'
-        : 'Tænk – vælg det rigtige svar';
+        ? 'Regn svaret ud på papir og skriv tallet her ✍️ (forkert svar koster et liv ❤️)'
+        : 'Tænk – vælg det rigtige svar (forkert svar koster et liv ❤️)';
     var fb = $('mFb'); fb.textContent = ''; fb.className = '';
     var ans = $('mAns'); ans.innerHTML = '';
     if (t.type === 'think'){
       t.opts.forEach(function(opt, i){
         var b = document.createElement('button'); b.className = 'ansBtn'; b.textContent = opt;
-        b.onclick = function(){ answerThink(t, i); };
+        b.onclick = (function(bb, ii){ return function(){ answerThink(t, ii, bb); }; })(b, i);
         ans.appendChild(b);
       });
     } else if (t.type === 'input'){
@@ -1848,34 +2100,55 @@
     renderTaskList();
   }
 
-  function answerThink(t, i){
+  function answerThink(t, i, btn){
     var fb = $('mFb');
-    if (i === t.answer){
+    if (solved[t.id]) return;
+    if (noLives()){ fb.className = 'no'; fb.textContent = '💔 Ingen liv tilbage – løs en bygge-opgave 🔨 for at få et liv igen.'; return; }
+    var ok = (i === t.answer);
+    bumpAttempt(t.id, ok);
+    if (ok){
       markSolved(t); fb.className = 'ok'; fb.textContent = '✓ Rigtigt! ' + t.reward;
       var bs = $('mAns').querySelectorAll('.ansBtn');
       for (var j=0;j<bs.length;j++) bs[j].disabled = true;
-    } else { fb.className = 'no'; fb.textContent = 'Ikke helt – tænk over det og prøv igen. 🤔'; }
+    } else {
+      loseLife(); if (btn) btn.disabled = true;
+      fb.className = 'no';
+      fb.textContent = noLives() ? '✗ Forkert – og du har ikke flere liv. Løs en bygge-opgave 🔨.'
+                                 : 'Ikke helt – tænk over det og prøv igen. 🤔';
+    }
   }
   function answerInput(t){
     var fb = $('mFb'); var el = $('mInput'); if (!el) return;
+    if (solved[t.id]) return;
+    if (noLives()){ fb.className = 'no'; fb.textContent = '💔 Ingen liv tilbage – løs en bygge-opgave 🔨 for at få et liv igen.'; return; }
     var raw = (el.value || '').replace(',', '.');
     var match = raw.match(/-?\d+(\.\d+)?/);
     if (!match){ fb.className = 'no'; fb.textContent = 'Skriv et tal som svar. ✍️'; return; }
     var num = parseFloat(match[0]);
     var tol = (t.tol != null) ? t.tol : 0.05;
-    if (Math.abs(num - t.solution) <= tol){
+    var ok = Math.abs(num - t.solution) <= tol;
+    bumpAttempt(t.id, ok);
+    if (ok){
       markSolved(t); fb.className = 'ok'; fb.textContent = '✓ Rigtigt! ' + t.reward;
       el.disabled = true; var cb = $('mCheck'); if (cb) cb.disabled = true;
-    } else { fb.className = 'no'; fb.textContent = 'Ikke helt – tjek din ligning og prøv igen. 🤔'; }
+    } else {
+      loseLife();
+      fb.className = 'no';
+      fb.textContent = noLives() ? '✗ Ikke helt – og du har ikke flere liv. Løs en bygge-opgave 🔨.'
+                                 : 'Ikke helt – tjek dit svar og prøv igen. 🤔';
+    }
   }
   function checkBuild(t){
     var fb = $('mFb');
-    if (t.check()){ markSolved(t); fb.className = 'ok'; fb.textContent = '✓ Flot! ' + t.reward; }
+    var ok = t.check();
+    bumpAttempt(t.id, ok);
+    if (ok){ markSolved(t); fb.className = 'ok'; fb.textContent = '✓ Flot! ' + t.reward; }
     else { fb.className = 'no'; fb.textContent = 'Endnu ikke. ' + (t.hintBad || 'Prøv igen.'); }
   }
   function markSolved(t){
     var was = solved[t.id]; solved[t.id] = true; updateTasksBtn();
     if (!was) lastSolved = t.id;
+    if (!was && t.type === 'build') gainLife();   // bygge-opgave løst → et liv igen (maks 3)
     if (!was && t.unlocks) unlockFig(t.unlocks);
     if (!was && t.grantSkateboard) giveSkateboard();
     if (!was) checkMilestones();
@@ -2171,6 +2444,8 @@
     $('go').onclick = function(){
       $('start').classList.add('hidden');
       $('tasksPanel').classList.remove('hidden'); renderTaskList();
+      var seenGuide; try { seenGuide = localStorage.getItem('rumgeo_seen_guide'); } catch(e){}
+      if (!seenGuide) openGuide();   // vis vejledningen automatisk første gang
     };
     $('restart').onclick = function(){
       if (confirm('Vil du slette din fremgang og starte helt forfra?')) resetGame();
@@ -2198,6 +2473,12 @@
     $('quizBtn').onclick = startQuiz;
     $('quizClose').onclick = function(){ $('quizModal').classList.add('hidden'); };
     $('quizNext').onclick = nextQuiz;
+    $('statsBtn').onclick = openStats;
+    $('statsClose').onclick = function(){ $('statsModal').classList.add('hidden'); };
+    $('guideBtn').onclick = openGuide;
+    $('guideClose').onclick = closeGuide;
+    $('guidePlay').onclick = closeGuide;
+    $('gfxBtn').onclick = toggleGfx;
     updateKlodser();
   }
   function bindHold(id, flag){
@@ -2214,6 +2495,13 @@
   function animate(){
     requestAnimationFrame(animate);
     var dt = Math.min(clock.getDelta(), 0.05);
+
+    // sol + skygge-kasse følger spilleren, så skygger dækker hele banen
+    if (sunLight && gfxHigh){
+      sunLight.position.set(pos.x + 28, 44, pos.z + 20);
+      sunLight.target.position.set(pos.x, 0, pos.z);
+      sunLight.target.updateMatrixWorld();
+    }
 
     // kamera-drej via piletaster
     if (keys['ArrowLeft'] || moveBtn.turnL) camYaw += 1.6*dt;
