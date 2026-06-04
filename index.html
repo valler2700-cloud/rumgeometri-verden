@@ -362,6 +362,30 @@
   #guidePlay{ margin-top:18px; width:100%; font-family:var(--font); font-weight:700; font-size:16px; color:#fff;
     background:var(--teal); border:none; border-radius:13px; padding:12px; cursor:pointer; }
   #guidePlay:active{ transform:scale(.98); }
+
+  /* Sværhedsgrad-vælger på startskærmen */
+  .diffRow{ display:flex; flex-wrap:wrap; gap:7px; align-items:center; justify-content:center; margin:4px 0 14px; }
+  .diffLbl{ width:100%; text-align:center; font-size:13px; font-weight:600; color:#3a5168; margin-bottom:2px; }
+  .diffBtn{ font-family:var(--font); font-weight:600; font-size:14px; color:var(--navy); background:#eef5f4;
+    border:2px solid transparent; border-radius:12px; padding:8px 14px; cursor:pointer; transition:transform .1s; }
+  .diffBtn:hover{ transform:translateY(-1px); }
+  .diffBtn.sel{ background:#fff; border-color:var(--teal); box-shadow:0 4px 12px rgba(14,124,123,.22); }
+  .eqck{ display:block; margin-top:6px; font-size:13px; font-weight:600; color:#0e7c7b; line-height:1.45; }
+
+  /* 0-liv lignings-popup */
+  #eqLifeModal{ inset:0; z-index:76; background:rgba(120,30,30,.45); display:flex; align-items:center; justify-content:center; }
+  #eqLifeCard{ background:#fff; border-radius:22px; padding:22px 24px; width:min(460px,calc(100vw - 32px));
+    max-height:88vh; overflow:auto; box-shadow:0 24px 60px rgba(120,30,30,.4); }
+  #eqLifeCard h2{ margin:0 0 4px; font-size:21px; }
+  #eqLifeLink{ font-size:13px; color:#0e7c7b; background:#e7f4f3; border-radius:10px; padding:8px 11px; margin:10px 0; line-height:1.45; }
+  #eqLifePrompt{ font-size:16px; font-weight:600; line-height:1.45; margin:6px 0 12px; }
+  #eqLifeFb{ font-size:14px; font-weight:600; margin-top:10px; line-height:1.45; }
+  #eqLifeFb.ok{ color:#2a8a52; } #eqLifeFb.no{ color:#c0392b; }
+  #eqLifeBtns{ display:flex; gap:8px; margin-top:6px; }
+  #eqLifeInput{ flex:1; font-family:var(--font); font-size:16px; padding:10px 12px; border:2px solid #cfe0de; border-radius:11px; }
+  #eqLifeCheck{ font-family:var(--font); font-weight:700; font-size:15px; color:#fff; background:#0e7c7b; border:none; border-radius:11px; padding:10px 16px; cursor:pointer; }
+  #eqLifeHintBtn{ margin-top:10px; font-family:var(--font); font-weight:600; font-size:13px; color:var(--navy); background:#eef5f4; border:none; border-radius:10px; padding:8px 12px; cursor:pointer; }
+  #eqLifeHint{ font-size:13.5px; color:#3a5168; margin-top:8px; line-height:1.5; }
 </style>
 </head>
 <body>
@@ -520,6 +544,22 @@
     </div>
   </div>
 
+  <div id="eqLifeModal" class="ui hidden">
+    <div id="eqLifeCard">
+      <h2>💔 ➜ ❤️ Løs en ligning – få et liv igen</h2>
+      <p class="bSub">Du er løbet tør for liv. Løs ligningsopgaven med én ubekendt herunder, så får du et liv igen. (Du kan også løse en bygge-opgave 🔨.)</p>
+      <div id="eqLifeLink"></div>
+      <div id="eqLifePrompt"></div>
+      <div id="eqLifeBtns">
+        <input id="eqLifeInput" type="text" placeholder="Skriv dit svar …">
+        <button id="eqLifeCheck">Tjek</button>
+      </div>
+      <div id="eqLifeFb"></div>
+      <button id="eqLifeHintBtn">💬 Hjælp – vis et trin</button>
+      <div id="eqLifeHint"></div>
+    </div>
+  </div>
+
   <div id="codeModal" class="ui hidden">
     <div id="codeCard">
       <h2>🔑 Lærer-kode</h2>
@@ -552,12 +592,18 @@
       <h1>Rumgeometri<b>-verden</b></h1>
       <p>En tom 3D-verden, hvor du <b>selv bygger alt</b>: hak malm for klodser, byg rumlige figurer i Byg-menuen, og lås nye figurer op ved at løse bygge-opgaver.</p>
       <div class="keys">
-        <b>1.</b> Hak grønne malm-blokke med ⛏️ → få klodser<br>
+        <b>1.</b> Hak malm-blokke (sten) med ⛏️ → få klodser<br>
         <b>2.</b> Tryk <b>🔨 Byg</b> → byg en terning (1 klods = 1 liter)<br>
         <b>3.</b> Løs opgaver (📋) → lås kasse, cylinder … op<br>
         <hr style="border:none;border-top:1px solid #e3eeec;margin:7px 0">
         <b>WASD</b> gå · <b>mellemrum</b> hop · <b>træk musen</b> drej kamera<br>
         <b>1/2</b> hakke/pumpe · <b>E</b>/klik brug · gå hen til en bygget figur for at justere
+      </div>
+      <div class="diffRow">
+        <span class="diffLbl">Vælg sværhedsgrad:</span>
+        <button class="diffBtn" data-diff="let">😀 Let</button>
+        <button class="diffBtn" data-diff="mellem">🙂 Mellem</button>
+        <button class="diffBtn sel" data-diff="svaer">🧠 Svær</button>
       </div>
       <button id="go">Start ▶</button>
       <button id="restart" class="hidden">🔄 Start forfra</button>
@@ -621,6 +667,9 @@
   var man = null, manBubble = null, manHits = 0, manSay = 5, manBubbleTimer = 0, manLaugh = 0, manWalk = 0, lastSolved = null;
   var manFollowTimer = 0, manHome = { x:2, z:25 };   // læreren står her og går kun hen til eleven når manFollowTimer > 0
   var helpIndex = 0, stuckTime = 0, stuckTaskId = null, autoHelped = false;
+  var difficulty = 'svaer';   // 'let' | 'mellem' | 'svaer' — vælges på startskærmen, gemmes i save
+  // Returnér opgaven set gennem den valgte sværhedsgrad (flettet med t.diff[difficulty] hvis den findes)
+  function diffTask(t){ return (t && t.diff && t.diff[difficulty]) ? Object.assign({}, t, t.diff[difficulty]) : t; }
   var throwCount = 0;
   var keys = {};
   var moveBtn = { fwd:false, back:false, left:false, right:false, turnL:false, turnR:false };
@@ -1245,7 +1294,7 @@
         solved: solved, unlocked: unlocked, klodser: klodser,
         hasGun: hasGun, hasPan: hasPan, hasBazooka: hasBazooka, hasNuke: hasNuke,
         hasSkateboard: hasSkateboard, compositesUnlocked: compositesUnlocked, lastSolved: lastSolved,
-        lives: lives, bestQuiz: bestQuiz, attempts: attempts, wrongs: wrongs
+        lives: lives, bestQuiz: bestQuiz, attempts: attempts, wrongs: wrongs, difficulty: difficulty
       }));
     } catch (e) {}
   }
@@ -1261,6 +1310,7 @@
     compositesUnlocked = !!s.compositesUnlocked; lastSolved = s.lastSolved || null;
     lives = (typeof s.lives === 'number') ? s.lives : 3;
     bestQuiz = s.bestQuiz || 0; attempts = s.attempts || {}; wrongs = s.wrongs || {};
+    if (s.difficulty === 'let' || s.difficulty === 'mellem' || s.difficulty === 'svaer') difficulty = s.difficulty;
     renderLives();
     if (hasGun) $('toolGun').classList.remove('hidden');
     if (hasPan) $('toolPan').classList.remove('hidden');
@@ -1289,13 +1339,73 @@
   function loseLife(){
     if (lives > 0) lives--;
     renderLives(); saveGame();
-    toast(lives <= 0 ? '💔 Ingen liv tilbage! Løs en bygge-opgave 🔨 for at få et liv igen.'
+    toast(lives <= 0 ? '💔 Ingen liv tilbage! Løs en ligning eller en bygge-opgave 🔨 for at få et liv igen.'
                      : '💔 Du mistede et liv (' + lives + '/3 tilbage)');
+    if (lives <= 0) openEqLife();   // tilbyd en ligningsopgave for at vinde et liv igen
   }
   function gainLife(){
     if (lives >= 3) return;          // maks 3 liv
     lives++; renderLives(); saveGame();
     toast('❤️ Du fik et liv igen! (' + lives + '/3)');
+  }
+
+  // ----- 0-liv: løs en ligning (én ubekendt) for at få et liv igen -----
+  var LIFE_EQS = [
+    { prompt:'En kasse har grundflade 100 cm² og rumfang 800 cm³. Kald højden h. Løs ligningen 100·h = 800 og find h (i cm).',
+      solution:8, placeholder:'h i cm',
+      link:'🔗 Samme idé som rumfangsopgaverne: du kender rumfanget (V) og grundfladen og finder den ukendte højde — V = grundflade · h.',
+      steps:['Rumfang = grundflade · højde.','Indsæt tallene: 100·h = 800.','Divider begge sider med 100: h = 800 ÷ 100.'] },
+    { prompt:'En terning har rumfang 64 cm³. Kald sidelængden s. Løs s³ = 64 og find s (i cm).',
+      solution:4, placeholder:'s i cm',
+      link:'🔗 Præcis som terning-opgaverne: V = s³. Kender du rumfanget, finder du siden med kubikroden.',
+      steps:['Terningens rumfang: V = s³.','Opstil: s³ = 64.','Hvilket tal ganget 3 gange giver 64? Prøv 4: 4·4·4 = 64.'] },
+    { prompt:'En cylinder har grundflade 20 cm² og rumfang 140 cm³. Kald højden h. Løs 20·h = 140 og find h (i cm).',
+      solution:7, placeholder:'h i cm',
+      link:'🔗 Som cylinder-opgaven: V = grundflade · h. Du kender V og grundfladen og finder højden.',
+      steps:['Rumfang = grundflade · højde.','Indsæt: 20·h = 140.','Divider med 20: h = 140 ÷ 20.'] },
+    { prompt:'Et rektangel har omkreds 30 cm. Længden er 5 cm længere end bredden. Kald bredden b. Løs 2·(b + (b+5)) = 30 og find b (i cm).',
+      solution:5, placeholder:'b i cm',
+      link:'🔗 At opstille en ligning og isolere den ukendte er nøglen — også når du finder en side ud fra et rumfang.',
+      steps:['Længde = b + 5, og omkreds = 2·(længde + bredde).','2·(b + b + 5) = 30 ⇒ 2·(2b + 5) = 30 ⇒ 4b + 10 = 30.','Træk 10 fra og divider med 4: b = 20 ÷ 4.'] },
+    { prompt:'En pyramide har grundflade 30 cm² og rumfang 100 cm³. Med V = ⅓·grundflade·h bliver det 10·h = 100. Find h (i cm).',
+      solution:10, placeholder:'h i cm',
+      link:'🔗 Som pyramide-opgaven: V = ⅓·grundflade·h. Kender du V og grundfladen, finder du højden.',
+      steps:['V = ⅓·grundflade·h = ⅓·30·h = 10·h.','Opstil: 10·h = 100.','Divider med 10: h = 100 ÷ 10.'] }
+  ];
+  var eqLifeCur = null, eqLifeHintIdx = 0;
+  function openEqLife(){
+    if (!$('eqLifeModal').classList.contains('hidden')) return;   // allerede åben
+    eqLifeCur = LIFE_EQS[Math.floor(Math.random()*LIFE_EQS.length)];
+    eqLifeHintIdx = 0;
+    $('eqLifeLink').textContent = eqLifeCur.link;
+    $('eqLifePrompt').textContent = eqLifeCur.prompt;
+    var fb = $('eqLifeFb'); fb.textContent = ''; fb.className = '';
+    $('eqLifeHint').textContent = '';
+    var inp = $('eqLifeInput'); inp.value = ''; inp.disabled = false;
+    $('eqLifeCheck').disabled = false;
+    $('eqLifeModal').classList.remove('hidden');
+    setTimeout(function(){ try { $('eqLifeInput').focus(); } catch(e){} }, 40);
+  }
+  function answerEqLife(){
+    if (!eqLifeCur) return;
+    var fb = $('eqLifeFb'), el = $('eqLifeInput');
+    var raw = (el.value || '').replace(',', '.'); var m = raw.match(/-?\d+(\.\d+)?/);
+    if (!m){ fb.className = 'no'; fb.textContent = 'Skriv et tal som svar. ✍️'; return; }
+    if (Math.abs(parseFloat(m[0]) - eqLifeCur.solution) <= 0.05){
+      fb.className = 'ok'; fb.textContent = '✓ Rigtigt! Du får et liv igen ❤️';
+      el.disabled = true; $('eqLifeCheck').disabled = true;
+      gainLife();
+      setTimeout(function(){ $('eqLifeModal').classList.add('hidden'); }, 1500);
+    } else {
+      fb.className = 'no'; fb.textContent = 'Ikke helt – prøv igen, eller tryk Hjælp. 🤔';
+    }
+  }
+  function eqLifeHintStep(){
+    if (!eqLifeCur) return;
+    var hint = $('eqLifeHint'), steps = eqLifeCur.steps || [];
+    if (eqLifeHintIdx >= steps.length){ hint.textContent = 'Det var alle trinene — skriv svaret nu. 🙂'; return; }
+    hint.textContent = '💬 Trin ' + (eqLifeHintIdx+1) + '/' + steps.length + ': ' + steps[eqLifeHintIdx];
+    eqLifeHintIdx++;
   }
   function bumpAttempt(id, ok){
     attempts[id] = (attempts[id] || 0) + 1;
@@ -1311,6 +1421,20 @@
   function closeGuide(){
     $('guideModal').classList.add('hidden');
     try { localStorage.setItem('rumgeo_seen_guide', '1'); } catch(e){}
+  }
+
+  // ----- Sværhedsgrad -----
+  function syncDiffButtons(){
+    var btns = document.querySelectorAll('.diffBtn');
+    for (var i=0;i<btns.length;i++){ btns[i].classList.toggle('sel', btns[i].getAttribute('data-diff') === difficulty); }
+  }
+  function setDifficulty(d){
+    if (d !== 'let' && d !== 'mellem' && d !== 'svaer') return;
+    difficulty = d; syncDiffButtons();
+    try { localStorage.setItem('rumgeo_diff', d); } catch(e){}   // egen nøgle (device-setting, uafhængig af save-gaten)
+    saveGame();
+    if (activeTask) chooseTask(activeTask);   // gen-vis åben opgave på det nye niveau
+    renderTaskList();
   }
   function renderStats(){
     var box = $('statsBody'); if (!box) return;
@@ -1539,16 +1663,16 @@
 
   var STEPS = {
     liter:['1 liter er et rummål: 1 liter = 1 dm³.','1 dm = 10 cm, så 1 dm³ = 10·10·10 cm³.','Så hvor mange cm³ er det?'],
-    tern1L:['1 liter = 1000 cm³ — skriv det ned.','Terningens rumfang er V = s³ (s·s·s).','Hvilket tal ganget tre gange giver 1000?','Tip: tænk på 10. Byg terningen med den sidelængde.'],
-    doubV:['Tag en terning med side 10 → V = 1000.','Fordobl siden til 20 → V = 20·20·20.','Sammenlign med 1000: hvor mange gange større?'],
-    doubO:['Overflade = fladernes arealer (side·side).','Fordobler du siden, bliver HVER flade 2·2 gange større.','Så hvor mange gange i alt?'],
-    terning8:['Hvor mange 10-cm terninger i bredden? (20 ÷ 10).','Det samme i højden og dybden.','Gang de tre tal sammen.'],
-    kasse6000:['Kassens rumfang: V = l·b·h.','Find tre FORSKELLIGE tal, der ganget giver 6000.','Prøv at dele 6000 op, fx 6000 = 30·20·…','Byg kassen med dine tre tal.'],
-    minO:['Samme rumfang kan have forskellig overflade.','Jo mere "terning-agtig", jo mindre overflade.','Prøv at gøre l, b og h næsten ens.'],
-    cyl2L:['2 liter = 2000 cm³.','Cylinder: V = π·r²·h.','Vælg fx r = 8, og find h, så π·r²·h ≈ 2000.'],
+    tern1L:['Først: hvad er 1 liter i cm³? 1 liter = 1 dm³ = 1000 cm³.','Terningens rumfang: V = s·s·s = s³.','Vi skal altså have s³ = 1000.','Hvilket tal ganget med sig selv 3 gange giver 1000?','Prøv 10: 10·10 = 100, og 100·10 = 1000. ✓','Byg terningen med sidelængde s = 10 cm.'],
+    doubV:['Start med en terning med side 10 cm: V = 10·10·10 = 1000.','Fordobl ALLE mål — ny side = 20 cm.','Nyt rumfang: V = 20·20·20 = 8000.','Sammenlign: 8000 ÷ 1000 = ? gange større.'],
+    doubO:['Overfladen består af flader, og hver flade er side·side (to mål).','Fordobler du siden, bliver hver flade 2·2 = 4 gange større.','Alle flader vokser lige meget.','Så hvor mange gange større bliver overfladen i alt?'],
+    terning8:['Den store terning har side 20 cm, de små har side 10 cm.','I bredden er der plads til 20 ÷ 10 = 2 små terninger.','Det samme i højden og i dybden: 2 og 2.','Gang de tre tal sammen: 2·2·2 = ?'],
+    kasse6000:['Kassens rumfang: V = l·b·h.','Du skal finde tre tal, der ganget giver 6000 — og de skal være FORSKELLIGE.','Vælg to af dem først, fx l = 30 og b = 20 → 30·20 = 600.','Så mangler du h: 600·h = 6000 ⇒ h = 10.','Byg kassen 30·20·10 (eller tre andre forskellige tal).'],
+    minO:['Rumfanget skal være ca. 8000 cm³ — men formen må du selv vælge.','Samme rumfang kan have meget forskellig overflade.','Jo mere kassen ligner en terning, jo mindre overflade.','En terning med side 20: 20·20·20 = 8000 cm³.','Byg den — så har du både rumfanget og mindst overflade.'],
+    cyl2L:['2 liter = 2000 cm³.','Cylinderens rumfang: V = π·r²·h.','Vælg en radius, fx r = 8 → grundfladen π·8² ≈ 201.','Så mangler du højden: 201·h ≈ 2000 ⇒ h ≈ 10.','Byg cylinderen med r = 8 og h ≈ 10.'],
     cylkegle:['Forestil dig at hælde fra keglen op i cylinderen (samme bund og højde).','Hvor mange keglefulde fylder cylinderen?','Så keglen fylder 1 ud af …?'],
-    pyr9L:['Pyramide: V = ⅓·a²·h.','Sæt a = 30 → a² = 900, så V = 300·h.','Løs 300·h = 9000 for at finde h.'],
-    kugleO:['Kuglens overflade: O = 4·π·r².','Du vil have O ≈ 5000. Isolér r: r = √(O ÷ (4π)).','Regn √(5000 ÷ 12,57) — ca. hvilket tal?'],
+    pyr9L:['Pyramidens rumfang: V = ⅓·a²·h.','Grundkanten er givet: a = 30, så a² = 900.','Så V = ⅓·900·h = 300·h.','Sæt 300·h = 9000 og divider med 300: h = ?','Byg pyramiden med a = 30 og den højde.'],
+    kugleO:['Kuglens overflade: O = 4·π·r².','Du vil have O ≈ 5000 — find r baglæns.','Divider først: 5000 ÷ (4·π) = 5000 ÷ 12,57 ≈ 398.','Det er r², så r = √398 ≈ 20.','Byg kuglen med radius ca. 20 cm.'],
     kasseDouble:['Du skal have længden l = 2·b.','Vælg en bredde b, fx 40.','Sæt så længden til det dobbelte.'],
     raket:['Byg først en cylinder et sted.','Gå hen til cylinderen, så panelet viser den.','Byg en kegle, mens du står ved den → den lander ovenpå.'],
     hus:['Byg først en kasse et sted.','Gå hen til kassen, så panelet viser den.','Byg en pyramide, mens du står ved den → taget lander ovenpå.'],
@@ -1893,47 +2017,81 @@
     { id:'tern1L', tag:'Byg', fig:'terning', type:'build', needs:['terning'], unlocks:'kasse',
       prompt:'Byg en terning med rumfang præcis 1 liter.',
       reward:'s = ∛1000 = 10 cm. Rumfanget vokser i tredje potens!',
+      eqCheck:'Ligning: s³ = 1000 ⇒ s = ∛1000 = 10 cm. Tjek: 10·10·10 = 1000 cm³ = 1 liter ✓',
       hintBad:'Husk: 1 liter = 1 000 cm³. Hvilket tal ganget med sig selv tre gange giver 1 000?',
-      check:function(){ var d=figByKey('terning').dims; var V=d.s*d.s*d.s; return Math.abs(V-1000)<=40; } },
+      check:function(){ var d=figByKey('terning').dims; var V=d.s*d.s*d.s; return Math.abs(V-1000)<=40; },
+      diff:{ mellem:{ prompt:'Byg en terning med rumfang 1 liter = 1000 cm³. Hvilken sidelængde giver det?',
+                      check:function(){ var d=figByKey('terning').dims; var V=d.s*d.s*d.s; return Math.abs(V-1000)<=120; } },
+             let:{ prompt:'Byg en terning med side 10 cm — så bliver rumfanget 1 liter (1000 cm³).',
+                   reward:'Side 10 cm: V = 10·10·10 = 1000 cm³ = 1 liter. 👍',
+                   check:function(){ var d=figByKey('terning').dims; return Math.abs(d.s-10)<=2; } } } },
 
     { id:'doubV', tag:'Tænk 🧠 ✏️', fig:'terning', type:'input', needs:['terning'], solution:8, placeholder:'antal gange',
       prompt:'Hvis du fordobler ALLE mål på en terning – hvor mange gange større bliver rumfanget? Skriv tallet.',
-      reward:'2·2·2 = 2³ = 8. Tre mål fordobles, så rumfanget bliver 8 gange større.' },
+      reward:'2·2·2 = 2³ = 8. Tre mål fordobles, så rumfanget bliver 8 gange større.',
+      eqCheck:'Med tal: side 10 → V = 1000. Dobbelt side 20 → V = 20³ = 8000. 8000 ÷ 1000 = 8 gange.',
+      diff:{ let:{ type:'think', opts:['2 gange større','4 gange større','8 gange større'], answer:2 } } },
 
     { id:'doubO', tag:'Tænk 🧠 ✏️', fig:'terning', type:'input', needs:['terning'], solution:4, placeholder:'antal gange',
       prompt:'Og når du fordobler alle mål – hvor mange gange større bliver OVERFLADEAREALET? Skriv tallet.',
-      reward:'Areal afhænger af to mål: 2·2 = 2² = 4 gange.' },
+      reward:'Areal afhænger af to mål: 2·2 = 2² = 4 gange.',
+      eqCheck:'Areal = side·side (to mål). Dobbelt side: 2·2 = 2² = 4 gange.',
+      diff:{ let:{ type:'think', opts:['2 gange større','4 gange større','6 gange større'], answer:1 } } },
 
     { id:'terning8', tag:'Tænk 🧠 ✏️', fig:'terning', type:'input', needs:['terning'], solution:8, placeholder:'antal terninger',
       prompt:'Hvor mange små terninger med side 10 cm kan der være inde i en terning med side 20 cm? Skriv tallet.',
-      reward:'Der er plads til 2 i hver retning: 2·2·2 = 8 små terninger.' },
+      reward:'Der er plads til 2 i hver retning: 2·2·2 = 8 små terninger.',
+      eqCheck:'20 ÷ 10 = 2 i hver retning. 2·2·2 = 2³ = 8 små terninger.',
+      diff:{ let:{ type:'think', opts:['4','6','8'], answer:2 } } },
 
     { id:'kasse6000', tag:'Byg + tænk 🧠', fig:'kasse', type:'build', needs:['kasse'], unlocks:'cylinder',
       prompt:'Byg en kasse med rumfang 6 000 cm³ – men hvor alle tre sider er FORSKELLIGE.',
       reward:'Fx 30·20·10 = 6 000. Der findes mange løsninger – I skal bare dele 6 000 op i tre forskellige faktorer.',
+      eqCheck:'Ligning: l·b·h = 6000. Vælg fx l=30, b=20 ⇒ 30·20·h = 600·h = 6000 ⇒ h = 10 cm.',
       hintBad:'Rumfanget skal være ~6 000 cm³, OG l, b og h må ikke være ens.',
       check:function(){ var d=figByKey('kasse').dims; var V=d.l*d.b*d.h;
         var diff = (d.l!==d.b && d.b!==d.h && d.l!==d.h);
-        return Math.abs(V-6000)<=250 && diff; } },
+        return Math.abs(V-6000)<=250 && diff; },
+      diff:{ mellem:{ check:function(){ var d=figByKey('kasse').dims; var V=d.l*d.b*d.h;
+                        var diff=(d.l!==d.b && d.b!==d.h && d.l!==d.h); return Math.abs(V-6000)<=400 && diff; } },
+             let:{ prompt:'Byg en kasse med rumfang ca. 6 000 cm³ (l·b·h ≈ 6000). Fx 30·20·10.',
+                   reward:'Fx 30·20·10 = 6 000 cm³. Rumfang = l·b·h.',
+                   hintBad:'Rumfanget skal være ca. 6 000 cm³ — prøv fx 30·20·10.',
+                   check:function(){ var d=figByKey('kasse').dims; var V=d.l*d.b*d.h; return Math.abs(V-6000)<=600; } } } },
 
     { id:'minO', tag:'Optimering 🧠', fig:'kasse', type:'build', needs:['kasse'],
       prompt:'Byg en kasse med rumfang ca. 8 000 cm³, men med MINDST muligt overfladeareal. Hvilken form bliver bedst?',
       reward:'Terningen 20·20·20 vinder: V = 8 000 cm³ med kun O = 2 400 cm². Jo mere "terning-agtig", jo mindre materiale.',
+      eqCheck:'Terning: V = s³ ⇒ s = ∛8000 = 20 cm. Overflade O = 6·s² = 6·20² = 2 400 cm².',
       hintBad:'Rumfanget skal være ~8 000 cm³. Hvad sker der med overfladen, når kassen kommer til at ligne en terning?',
       check:function(){ var d=figByKey('kasse').dims; var V=d.l*d.b*d.h;
-        var O=2*(d.l*d.b+d.l*d.h+d.b*d.h); return V>=7400 && V<=8600 && O<=2600; } },
+        var O=2*(d.l*d.b+d.l*d.h+d.b*d.h); return V>=7400 && V<=8600 && O<=2600; },
+      diff:{ mellem:{ check:function(){ var d=figByKey('kasse').dims; var V=d.l*d.b*d.h;
+                        var O=2*(d.l*d.b+d.l*d.h+d.b*d.h); return V>=7400 && V<=8600 && O<=2800; } },
+             let:{ prompt:'Byg en kasse med rumfang ca. 8 000 cm³ — prøv en terning (20·20·20), den bruger mindst materiale.',
+                   reward:'Terningen 20·20·20 = 8 000 cm³ med kun O = 2 400 cm². Jo mere terning-agtig, jo mindre materiale.',
+                   hintBad:'Prøv en terning med side 20 cm: 20·20·20 = 8 000 cm³.',
+                   check:function(){ var d=figByKey('kasse').dims; var V=d.l*d.b*d.h; return Math.abs(V-8000)<=900; } } } },
 
     { id:'kasseDouble', tag:'Byg 🧠', fig:'kasse', type:'build', needs:['kasse'],
       prompt:'Byg en kasse, der er præcis dobbelt så lang (l) som den er bred (b).',
       reward:'Når l = 2·b passer det – fx l = 80 cm og b = 40 cm.',
+      eqCheck:'Ligning: l = 2·b. Vælg b = 40 ⇒ l = 2·40 = 80 cm.',
       hintBad:'Sæt længden l til præcis det dobbelte af bredden b.',
-      check:function(){ var f=figByKey('kasse'); return f.placed && Math.abs(f.dims.l - 2*f.dims.b) <= 1; } },
+      check:function(){ var f=figByKey('kasse'); return f.placed && Math.abs(f.dims.l - 2*f.dims.b) <= 1; },
+      diff:{ mellem:{ check:function(){ var f=figByKey('kasse'); return f.placed && Math.abs(f.dims.l - 2*f.dims.b) <= 2; } },
+             let:{ prompt:'Byg en kasse hvor længden er dobbelt så lang som bredden — fx bredde 40 cm og længde 80 cm.',
+                   check:function(){ var f=figByKey('kasse'); return f.placed && Math.abs(f.dims.l - 2*f.dims.b) <= 4; } } } },
 
     { id:'cyl2L', tag:'Byg', fig:'cylinder', type:'build', needs:['cylinder'], unlocks:'kegle',
       prompt:'Byg en cylinder med rumfang så tæt på 2 liter (2 000 cm³) som muligt.',
       reward:'V = π·r²·h. Der er mange løsninger – fx r = 8 cm og h ≈ 10 cm.',
+      eqCheck:'Ligning: π·r²·h = 2000. Med r = 8 ⇒ π·64·h ≈ 201·h = 2000 ⇒ h ≈ 10 cm.',
       hintBad:'2 liter = 2 000 cm³. Prøv dig frem med r og h – husk V = π·r²·h.',
-      check:function(){ var d=figByKey('cylinder').dims; var V=PI*d.r*d.r*d.h; return Math.abs(V-2000)<=200; } },
+      check:function(){ var d=figByKey('cylinder').dims; var V=PI*d.r*d.r*d.h; return Math.abs(V-2000)<=200; },
+      diff:{ mellem:{ check:function(){ var d=figByKey('cylinder').dims; var V=PI*d.r*d.r*d.h; return Math.abs(V-2000)<=350; } },
+             let:{ prompt:'Byg en cylinder med rumfang ca. 2 liter (2 000 cm³). Prøv r = 8 cm og h = 10 cm.',
+                   check:function(){ var d=figByKey('cylinder').dims; var V=PI*d.r*d.r*d.h; return Math.abs(V-2000)<=550; } } } },
 
     { id:'cylkegle', tag:'Sammenlign 🧠', type:'think', needs:['kegle'], unlocks:'pyramide',
       prompt:'En kegle og en cylinder har samme grundflade og samme højde. Hvor stor del fylder keglen af cylinderen?',
@@ -1949,9 +2107,15 @@
     { id:'pyr9L', tag:'Byg + tænk 🧠', fig:'pyramide', type:'build', needs:['pyramide'], unlocks:'kugle',
       prompt:'Byg en pyramide med kvadratisk grundkant 30 cm og rumfang 9 000 cm³ (find højden).',
       reward:'V = ⅓·a²·h = ⅓·30²·h = 300·h. 300·h = 9 000 ⇒ h = 30 cm.',
+      eqCheck:'Ligning: ⅓·a²·h = 9000 ⇒ ⅓·30²·h = 300·h = 9000 ⇒ h = 9000 ÷ 300 = 30 cm.',
       hintBad:'Sæt a = 30 cm. Brug V = ⅓·a²·h, og find den højde der giver 9 000 cm³.',
       check:function(){ var d=figByKey('pyramide').dims; var V=d.a*d.a*d.h/3;
-        return Math.abs(d.a-30)<=1 && Math.abs(V-9000)<=400; } },
+        return Math.abs(d.a-30)<=1 && Math.abs(V-9000)<=400; },
+      diff:{ mellem:{ check:function(){ var d=figByKey('pyramide').dims; var V=d.a*d.a*d.h/3;
+                        return Math.abs(d.a-30)<=2 && Math.abs(V-9000)<=700; } },
+             let:{ prompt:'Byg en pyramide med grundkant 30 cm og højde 30 cm (det giver rumfang 9 000 cm³).',
+                   reward:'V = ⅓·a²·h = ⅓·30²·30 = 300·30 = 9 000 cm³.',
+                   check:function(){ var d=figByKey('pyramide').dims; return Math.abs(d.a-30)<=3 && Math.abs(d.h-30)<=3; } } } },
 
     { id:'hus', tag:'Sammensæt 🏗️', fig:'pyramide', type:'build', needs:['pyramide'],
       prompt:'Byg et HUS: stil en pyramide oven på en kasse. Byg først en kasse, gå hen til den, og byg så pyramiden.',
@@ -1962,8 +2126,13 @@
     { id:'kugleO', tag:'Byg + tænk 🧠', fig:'kugle', type:'build', needs:['kugle'], unlocks:'prisme',
       prompt:'Byg en kugle med overfladeareal så tæt på 5 000 cm² som muligt. Hvad bliver radius cirka?',
       reward:'O = 4·π·r² ⇒ r = √(O / (4·π)) = √(5000 / 12,57) ≈ 20 cm.',
+      eqCheck:'Ligning: 4·π·r² = 5000 ⇒ r² = 5000 ÷ (4·π) ≈ 398 ⇒ r = √398 ≈ 20 cm.',
       hintBad:'O = 4·π·r². Prøv dig frem – eller regn baglæns: r = √(5000 / (4·π)).',
-      check:function(){ var r=figByKey('kugle').dims.r; var O=4*PI*r*r; return Math.abs(O-5000)<=250; } },
+      check:function(){ var r=figByKey('kugle').dims.r; var O=4*PI*r*r; return Math.abs(O-5000)<=250; },
+      diff:{ mellem:{ check:function(){ var r=figByKey('kugle').dims.r; var O=4*PI*r*r; return Math.abs(O-5000)<=450; } },
+             let:{ prompt:'Byg en kugle med radius ca. 20 cm (det giver overfladeareal ≈ 5 000 cm²).',
+                   reward:'O = 4·π·r² = 4·π·20² ≈ 5 027 cm². Radius ≈ 20 cm.',
+                   check:function(){ var r=figByKey('kugle').dims.r; return Math.abs(r-20)<=3; } } } },
 
     { id:'husV', tag:'Sammensat 🧠', type:'think', needs:['prisme'],
       prompt:'Et hus er en kasse med et pyramidetag. Hvordan finder man husets samlede RUMFANG?',
@@ -1972,23 +2141,28 @@
 
     { id:'tree', tag:'📐 Det høje træ ✏️', type:'input', needs:[], grantSkateboard:true, solution:12, placeholder:'højde i m',
       prompt:'Find det høje træs højde med Pythagoras: Du står 9 m fra træets fod. Fra dine fødder til træets top er der 15 m (det er hypotenusen). Hvor højt er træet? Skriv svaret i meter.',
-      reward:'a² + b² = c²  ⇒  højde = √(15² − 9²) = √(225 − 81) = √144 = 12 m. Belønning: 🛹 skateboard!' },
+      reward:'a² + b² = c²  ⇒  højde = √(15² − 9²) = √(225 − 81) = √144 = 12 m. Belønning: 🛹 skateboard!',
+      diff:{ let:{ type:'think', opts:['10 m','12 m','14 m'], answer:1 } } },
 
     { id:'pyth1', tag:'Bonus 📐 ✏️', type:'input', needs:[], solution:5, placeholder:'hypotenuse',
       prompt:'Bonus (2D): En retvinklet trekant har kateter 3 og 4. Hvor lang er hypotenusen? Skriv tallet.',
-      reward:'3² + 4² = 9 + 16 = 25, og √25 = 5.' },
+      reward:'3² + 4² = 9 + 16 = 25, og √25 = 5.',
+      diff:{ let:{ type:'think', opts:['5','7','12'], answer:0 } } },
 
     { id:'pyth2', tag:'Bonus 📐 ✏️', type:'input', needs:[], solution:10, placeholder:'hypotenuse',
       prompt:'Bonus (2D): En retvinklet trekant har kateter 6 og 8. Hvor lang er hypotenusen? Skriv tallet.',
-      reward:'6² + 8² = 36 + 64 = 100, og √100 = 10.' },
+      reward:'6² + 8² = 36 + 64 = 100, og √100 = 10.',
+      diff:{ let:{ type:'think', opts:['10','14','48'], answer:0 } } },
 
     { id:'vinkel1', tag:'Bonus 📐 ✏️', type:'input', needs:[], solution:55, placeholder:'vinkel i °',
       prompt:'Bonus (2D): To vinkler i en trekant er 90° og 35°. Hvor stor er den tredje vinkel? Skriv antal grader.',
-      reward:'Vinkelsummen er 180°: 180 − 90 − 35 = 55°.' },
+      reward:'Vinkelsummen er 180°: 180 − 90 − 35 = 55°.',
+      diff:{ let:{ type:'think', opts:['45°','55°','65°'], answer:1 } } },
 
     { id:'vinkel2', tag:'Bonus 📐 ✏️', type:'input', needs:[], solution:360, placeholder:'grader',
       prompt:'Bonus (2D): Hvad er vinkelsummen i en firkant? Skriv antal grader.',
-      reward:'En firkant kan deles i to trekanter: 2 · 180° = 360°.' },
+      reward:'En firkant kan deles i to trekanter: 2 · 180° = 360°.',
+      diff:{ let:{ type:'think', opts:['180°','270°','360°'], answer:2 } } },
 
     // ===== ✏️ Ligningsopgaver: opstil en ligning og løs den =====
     { id:'ligRekt', tag:'✏️ Ligning', type:'input', needs:[], solution:8, placeholder:'b i cm',
@@ -2035,13 +2209,14 @@
       bar.appendChild(b1); bar.appendChild(b2); list.appendChild(bar);
     }
     TASKS.forEach(function(t){
+      var v = diffTask(t);
       var avail = taskAvailable(t);
       var el = document.createElement('div');
       el.className = 'task' + (solved[t.id] ? ' done' : '') + (activeTask && activeTask.id === t.id ? ' cur' : '');
       var icon = solved[t.id] ? '✅' : (avail ? '⬜' : '🔒');
       var sub = t.tag + (t.fig ? ' · ' + (t.use || capF(t.fig)) : '') + (t.unlocks ? ' · låser ' + capF(t.unlocks) + ' op' : '');
       el.innerHTML = '<div class="tk">' + icon + '</div>' +
-        '<div class="tt">' + t.prompt + '<small>' + sub + '</small></div>';
+        '<div class="tt">' + v.prompt + '<small>' + sub + '</small></div>';
       if (avail) el.onclick = function(){ chooseTask(t); };
       else { el.style.opacity = '.5'; el.onclick = function(){ toast('🔒 Lås den nødvendige figur op først'); }; }
       if (admin && !solved[t.id] && avail){
@@ -2075,27 +2250,33 @@
     renderTaskList();
   }
 
+  function okFb(word, v){
+    var h = '✓ ' + word + ' ' + (v.reward || '');
+    if (v.eqCheck) h += '<br><span class="eqck">🔎 Tjek selv med en ligning: ' + v.eqCheck + '</span>';
+    return h;
+  }
   function chooseTask(t){
+    var v = diffTask(t);
     activeTask = t;
     $('mission').classList.remove('hidden');
     $('mTag').textContent = t.tag;
-    $('mPrompt').textContent = t.prompt;
-    $('mUse').innerHTML = (t.type === 'build')
+    $('mPrompt').textContent = v.prompt;
+    $('mUse').innerHTML = (v.type === 'build')
       ? 'Byg/justér i 🔨 Byg-menuen — opgaven tjekkes automatisk'
-      : (t.type === 'input')
+      : (v.type === 'input')
         ? 'Regn svaret ud på papir og skriv tallet her ✍️ (forkert svar koster et liv ❤️)'
         : 'Tænk – vælg det rigtige svar (forkert svar koster et liv ❤️)';
     var fb = $('mFb'); fb.textContent = ''; fb.className = '';
     var ans = $('mAns'); ans.innerHTML = '';
-    if (t.type === 'think'){
-      t.opts.forEach(function(opt, i){
+    if (v.type === 'think'){
+      v.opts.forEach(function(opt, i){
         var b = document.createElement('button'); b.className = 'ansBtn'; b.textContent = opt;
         b.onclick = (function(bb, ii){ return function(){ answerThink(t, ii, bb); }; })(b, i);
         ans.appendChild(b);
       });
-    } else if (t.type === 'input'){
+    } else if (v.type === 'input'){
       var inp = document.createElement('input'); inp.id = 'mInput'; inp.type = 'text';
-      inp.className = 'ansInput'; inp.placeholder = t.placeholder || 'Skriv svar …';
+      inp.className = 'ansInput'; inp.placeholder = v.placeholder || 'Skriv svar …';
       inp.onkeydown = function(e){ if (e.key === 'Enter') answerInput(t); };
       ans.appendChild(inp);
       var ci = document.createElement('button'); ci.id = 'mCheck'; ci.textContent = 'Tjek mit svar';
@@ -2106,7 +2287,7 @@
       c.onclick = function(){ checkBuild(t); };
       ans.appendChild(c);
     }
-    if (solved[t.id]){ fb.className = 'ok'; fb.textContent = '✓ Løst! ' + t.reward; }
+    if (solved[t.id]){ fb.className = 'ok'; fb.innerHTML = okFb('Løst!', v); }
     helpIndex = 0;
     var mh = $('mHint'); if (mh){ mh.style.display = 'none'; mh.innerHTML = ''; }
     var hb = $('mHelp'); if (hb) hb.onclick = helpStep;
@@ -2114,13 +2295,14 @@
   }
 
   function answerThink(t, i, btn){
+    var v = diffTask(t);
     var fb = $('mFb');
     if (solved[t.id]) return;
     if (noLives()){ fb.className = 'no'; fb.textContent = '💔 Ingen liv tilbage – løs en bygge-opgave 🔨 for at få et liv igen.'; return; }
-    var ok = (i === t.answer);
+    var ok = (i === v.answer);
     bumpAttempt(t.id, ok);
     if (ok){
-      markSolved(t); fb.className = 'ok'; fb.textContent = '✓ Rigtigt! ' + t.reward;
+      markSolved(t); fb.className = 'ok'; fb.innerHTML = okFb('Rigtigt!', v);
       var bs = $('mAns').querySelectorAll('.ansBtn');
       for (var j=0;j<bs.length;j++) bs[j].disabled = true;
     } else {
@@ -2131,6 +2313,7 @@
     }
   }
   function answerInput(t){
+    var v = diffTask(t);
     var fb = $('mFb'); var el = $('mInput'); if (!el) return;
     if (solved[t.id]) return;
     if (noLives()){ fb.className = 'no'; fb.textContent = '💔 Ingen liv tilbage – løs en bygge-opgave 🔨 for at få et liv igen.'; return; }
@@ -2138,11 +2321,11 @@
     var match = raw.match(/-?\d+(\.\d+)?/);
     if (!match){ fb.className = 'no'; fb.textContent = 'Skriv et tal som svar. ✍️'; return; }
     var num = parseFloat(match[0]);
-    var tol = (t.tol != null) ? t.tol : 0.05;
-    var ok = Math.abs(num - t.solution) <= tol;
+    var tol = (v.tol != null) ? v.tol : 0.05;
+    var ok = Math.abs(num - v.solution) <= tol;
     bumpAttempt(t.id, ok);
     if (ok){
-      markSolved(t); fb.className = 'ok'; fb.textContent = '✓ Rigtigt! ' + t.reward;
+      markSolved(t); fb.className = 'ok'; fb.innerHTML = okFb('Rigtigt!', v);
       el.disabled = true; var cb = $('mCheck'); if (cb) cb.disabled = true;
     } else {
       loseLife();
@@ -2152,11 +2335,12 @@
     }
   }
   function checkBuild(t){
+    var v = diffTask(t);
     var fb = $('mFb');
-    var ok = t.check();
+    var ok = v.check();
     bumpAttempt(t.id, ok);
-    if (ok){ markSolved(t); fb.className = 'ok'; fb.textContent = '✓ Flot! ' + t.reward; }
-    else { fb.className = 'no'; fb.textContent = 'Endnu ikke. ' + (t.hintBad || 'Prøv igen.'); }
+    if (ok){ markSolved(t); fb.className = 'ok'; fb.innerHTML = okFb('Flot!', v); }
+    else { fb.className = 'no'; fb.textContent = 'Endnu ikke. ' + (v.hintBad || 'Prøv igen.'); }
   }
   function markSolved(t){
     var was = solved[t.id]; solved[t.id] = true; updateTasksBtn();
@@ -2507,6 +2691,13 @@
     $('guideBtn').onclick = openGuide;
     $('guideClose').onclick = closeGuide;
     $('guidePlay').onclick = closeGuide;
+    try { var sd = localStorage.getItem('rumgeo_diff'); if (sd==='let'||sd==='mellem'||sd==='svaer') difficulty = sd; } catch(e){}
+    var dbtns = document.querySelectorAll('.diffBtn');
+    for (var di=0; di<dbtns.length; di++){ dbtns[di].onclick = (function(b){ return function(){ setDifficulty(b.getAttribute('data-diff')); }; })(dbtns[di]); }
+    syncDiffButtons();
+    $('eqLifeCheck').onclick = function(){ answerEqLife(); };
+    $('eqLifeHintBtn').onclick = function(){ eqLifeHintStep(); };
+    $('eqLifeInput').addEventListener('keydown', function(e){ if (e.key === 'Enter') answerEqLife(); e.stopPropagation(); });
     $('gfxBtn').onclick = toggleGfx;
     updateKlodser();
   }
