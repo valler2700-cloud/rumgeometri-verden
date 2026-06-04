@@ -619,6 +619,7 @@
   var juggleBall = null, ballState = '', ballBob = 0, ballVel = null, manKick = 0;
   var hasSkateboard = false, skateModel = null, moveSpeed = 6;   // skateboard-belønning
   var man = null, manBubble = null, manHits = 0, manSay = 5, manBubbleTimer = 0, manLaugh = 0, manWalk = 0, lastSolved = null;
+  var manFollowTimer = 0, manHome = { x:2, z:25 };   // læreren står her og går kun hen til eleven når manFollowTimer > 0
   var helpIndex = 0, stuckTime = 0, stuckTaskId = null, autoHelped = false;
   var throwCount = 0;
   var keys = {};
@@ -633,6 +634,7 @@
   var unlocked = { terning:true };   // resten låses op via opgaver
   var klodser = 0;                   // 1 klods = 1 liter = 1 dm³
   var KLODS_GAIN = 25;
+  var ORE_AMOUNT = 100, ORE_REGROW = 9;   // hver malm-blok: 100 klodser (4 hak) → tømt → vokser frem igen efter 9 sek.
   var nodes = [], built = [];
   var targetNode = null, targetNodeCloser = false, lastHint = '';
   var buildKey = null, buildDims = null;
@@ -996,6 +998,7 @@
     scene.remove(best.obj); arr.splice(arr.indexOf(best.obj), 1);
     toast(best.kind === 'wolf' ? '🔫 Du ramte ulven! 🐺' : '🔫 Av — du ramte en gris! 🐷');
     sayMan(['Din dyreplager!','Lad dyrene være i fred!','Stop med at skyde dyrene! 😡'][Math.floor(Math.random()*3)], 4);
+    manFollowTimer = 7;   // læreren kommer vredt hen til eleven
   }
 
   // ----- Milepæls-våben -----
@@ -1051,7 +1054,7 @@
     FIGS.forEach(function(f){ if (f.placed && Math.sqrt((f.group.position.x-cx)*(f.group.position.x-cx)+(f.group.position.z-cz)*(f.group.position.z-cz))<9){ removeFigure(f); figd++; } });
     flash('#ff8a3b',200); screenShake(500);
     toast('🚀 BOOM! ' + (killed?killed+' dyr':'') + (killed&&figd?' og ':'') + (figd?figd+' figur(er)':'') + (killed||figd?' ramt!':''));
-    if (killed) sayMan('Din store dyreplager!!',5);
+    if (killed){ sayMan('Din store dyreplager!!',5); manFollowTimer = 7; }
   }
   function dropNuke(){
     pigs.forEach(function(a){ scene.remove(a); }); pigs.length=0;
@@ -1060,7 +1063,7 @@
     flash('#ffffff',750); screenShake(1300); playScare();
     vy=20; onGround=false;
     toast('☢️ ATOMBOMBE! Alt blev udslettet!');
-    if (man) sayMan('DU ER EN KÆMPE DYREPLAGER!!!',6);
+    if (man){ sayMan('DU ER EN KÆMPE DYREPLAGER!!!',6); manFollowTimer = 7; }
   }
 
   // ----- Fjern/tag figurer op + kugle-minispil -----
@@ -1399,6 +1402,7 @@
     var sign=makeTextSign('SYGEHUS'); sign.position.set(0,5.05,3.05); g.add(sign);
     scene.add(g);
     man = makeCurlyMan(); man.position.set(2,0,hz+5); scene.add(man);
+    manHome = { x:2, z:hz+5 };   // lærerens faste plads
   }
   function buildTallTree(){
     var g=new THREE.Group(); g.position.set(-16,0,12);
@@ -1445,6 +1449,7 @@
   }
   function hitMan(){
     if (!onGround){ jumpscare(); return; }   // skudt mens man er i luften
+    manFollowTimer = 7;   // læreren reagerer og kommer hen til eleven
     manHits++;
     if (manHits >= 3){
       manHits = 0; throwCount++; vy = 26; onGround = false; manLaugh = 6;
@@ -1503,13 +1508,20 @@
       return;
     }
     man.rotation.x = 0;
+    if (manFollowTimer > 0) manFollowTimer -= dt;
     var dx = pos.x - man.position.x, dz = pos.z - man.position.z, d = Math.sqrt(dx*dx+dz*dz) || 1;
-    man.rotation.y = Math.atan2(dx, dz);
     if (manLaugh > 0){
       manLaugh -= dt; man.userData.rArm.rotation.x = -2.3;   // står stille, peger og griner
+      man.rotation.y = Math.atan2(dx, dz);                   // vender mod eleven
     } else {
       man.userData.rArm.rotation.x = 0;
-      if (d > 3.5){ man.position.x += dx/d*2.7*dt; man.position.z += dz/d*2.7*dt; manWalk += dt*6; man.position.y = Math.abs(Math.sin(manWalk))*0.08; }
+      // går KUN hen til eleven når der er en grund (manFollowTimer); ellers tilbage til sin faste plads
+      var approach = manFollowTimer > 0;
+      var tx = approach ? pos.x : manHome.x, tz = approach ? pos.z : manHome.z;
+      var gx = tx - man.position.x, gz = tz - man.position.z, gd = Math.sqrt(gx*gx+gz*gz) || 1;
+      var stop = approach ? 3.5 : 0.4;
+      if (gd > stop){ man.position.x += gx/gd*2.7*dt; man.position.z += gz/gd*2.7*dt; manWalk += dt*6; man.position.y = Math.abs(Math.sin(manWalk))*0.08; man.rotation.y = Math.atan2(gx, gz); }
+      else { man.position.y = 0; man.rotation.y = Math.atan2(dx, dz); }   // står stille og vender mod eleven
       manSay -= dt;
       if (manSay <= 0){ manSay = 7 + Math.random()*5; sayMan(MATH_LINES[Math.floor(Math.random()*MATH_LINES.length)], 4); }
     }
@@ -1555,6 +1567,7 @@
   };
   function helpStep(){
     if (!activeTask) return;
+    manFollowTimer = 8;   // læreren går hen til eleven for at forklare
     var steps = STEPS[activeTask.id] || ['Læs opgaven roligt igennem. Hvilke tal og hvilken formel passer? Prøv dig frem i Byg-menuen.'];
     var mh = $('mHint');
     if (helpIndex >= steps.length){
@@ -2169,9 +2182,18 @@
     saveGame();
   }
   function mine(node){
-    klodser += KLODS_GAIN; updateKlodser();
-    node.userData.pop = 1.3;
-    toast('+' + KLODS_GAIN + ' 🧊');
+    var ud = node.userData;
+    if (ud.depleted) return;
+    var g = Math.min(KLODS_GAIN, ud.amount);
+    klodser += g; updateKlodser();
+    ud.amount -= g;
+    ud.pop = 1.3;
+    if (ud.amount <= 0){
+      ud.depleted = true; ud.regrow = ORE_REGROW;
+      toast('+' + g + ' 🧊 · malmen er brugt op — den vokser frem igen om lidt');
+    } else {
+      toast('+' + g + ' 🧊');
+    }
   }
   function unlockFig(key){
     var f = figByKey(key); if (!f || f.unlocked) return;
@@ -2191,18 +2213,25 @@
   function buildNodes(){
     var cubes = [[0,0.45,0,0.9],[0.55,0.3,0.32,0.55],[-0.42,0.25,-0.4,0.5],[0.2,0.82,-0.2,0.45]];
     var n = 10;
+    var stone = new THREE.MeshLambertMaterial({ color:0x9a958c });   // grå sten
+    var beige = new THREE.MeshLambertMaterial({ color:0xd8c7a0 });   // beige klumper i stenen
     for (var i=0;i<n;i++){
       var a = (i/n)*PI*2 + 0.3, R = 19 + (i%2)*4;
       var grp = new THREE.Group(); grp.position.set(Math.sin(a)*R, 0, Math.cos(a)*R);
-      var mat = new THREE.MeshLambertMaterial({ color:0x57b85f, emissive:0x123d18 });
       cubes.forEach(function(c){
-        var m = new THREE.Mesh(new THREE.BoxGeometry(c[3],c[3],c[3]), mat);
+        var s = c[3];
+        var m = new THREE.Mesh(new THREE.BoxGeometry(s,s,s), stone);
         m.position.set(c[0],c[1],c[2]); grp.add(m);
         var e = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),
-          new THREE.LineBasicMaterial({ color:0x16324f }));
+          new THREE.LineBasicMaterial({ color:0x4a4640 }));   // mørkegrå kant (sten-stil)
         e.position.copy(m.position); grp.add(e);
+        for (var b=0;b<3;b++){                                // små beige klumper på overfladen
+          var bump = new THREE.Mesh(new THREE.SphereGeometry(0.10 + Math.random()*0.07, 7, 6), beige);
+          bump.position.set(c[0] + (Math.random()-0.5)*s, c[1] + (Math.random()-0.5)*s, c[2] + (Math.random()-0.5)*s);
+          grp.add(bump);
+        }
       });
-      grp.userData = { radius:1.1, pop:1 };
+      grp.userData = { radius:1.1, pop:1, amount:ORE_AMOUNT, maxAmount:ORE_AMOUNT, depleted:false, regrow:0 };
       scene.add(grp); nodes.push(grp);
     }
   }
@@ -2582,6 +2611,7 @@
     });
     var bestNode = null, bestNodeD = 1e9;
     nodes.forEach(function(nd){
+      if (nd.userData.depleted) return;   // tømt malm kan ikke sigtes/hakkes
       var dx = nd.position.x - pos.x, dz = nd.position.z - pos.z;
       var dd = Math.sqrt(dx*dx + dz*dz), reach = nd.userData.radius + 3.0;
       var dot = (dx*face.x + dz*face.z) / (dd || 1);
@@ -2609,14 +2639,22 @@
       h = '⛏️ Mine klodser · 🔨 byg figurer · samme tal igen = læg værktøj væk (tomme hænder)';
     if (h !== lastHint){ $('hint').innerHTML = h; lastHint = h; }
 
-    // malm-noder: roter + pop
+    // malm-noder: tømning/genvækst + pop (ingen rotation – de står stille)
     nodes.forEach(function(nd){
-      nd.rotation.y += 0.4*dt;
-      if (nd.userData.pop !== 1){
-        var s = nd.userData.pop + (1 - nd.userData.pop) * Math.min(1, dt*9);
-        if (Math.abs(s-1) < 0.01) s = 1;
-        nd.userData.pop = s; nd.scale.set(s,s,s);
+      var ud = nd.userData;
+      if (ud.depleted){
+        ud.regrow -= dt;
+        if (ud.regrow <= 0){ ud.depleted = false; ud.amount = ud.maxAmount; }   // vokser frem igen
       }
+      if (ud.pop !== 1){
+        ud.pop = ud.pop + (1 - ud.pop) * Math.min(1, dt*9);
+        if (Math.abs(ud.pop-1) < 0.01) ud.pop = 1;
+      }
+      var target = ud.depleted ? 0 : ud.pop;          // krymp væk når tømt, voks frem igen
+      var ns = nd.scale.x + (target - nd.scale.x) * Math.min(1, dt*9);
+      if (ns < 0.002) ns = 0;
+      nd.scale.set(ns,ns,ns);
+      nd.visible = ns > 0.002;
     });
     // byggede figurers navneskilte vender mod kameraet
     built.forEach(function(b){
